@@ -1,0 +1,1 @@
+appTypeArray[0] == "Building" && getScheduledInspIdForUnassignedInsp() != false ^ assignUnassignedInspection(getScheduledInspIdForUnassignedInsp());

@@ -1,0 +1,9 @@
+SELECT
+CASE
+WHEN '$$department$$' = (SERV_PROV_CODE || '/' || R3_AGENCY_CODE || '/' || R3_BUREAU_CODE || '/' || R3_DIVISION_CODE || '/' || R3_SECTION_CODE || '/' || R3_GROUP_CODE || '/' || R3_SUBGROUP_CODE)
+THEN R3_SUBGROUP_DESC
+ELSE
+'$$department$$'
+END
+AS YOU
+FROM G3DPTTYP

@@ -1,0 +1,449 @@
+function copyAdditionalInfo(srcCapId, targetCapId)
+{
+	//1. Get Additional Information with source CAPID.  (BValuatnScriptModel)
+	var  additionalInfo = getAdditionalInfo(srcCapId);
+	if (additionalInfo == null)
+	{
+		return;
+	}
+	//2. Get CAP detail with source CAPID.
+	var  capDetail = getCapDetailByID(srcCapId);
+	//3. Set target CAP ID to additional info.
+	additionalInfo.setCapID(targetCapId);
+	if (capDetail != null)
+	{
+		capDetail.setCapID(targetCapId);
+	}
+	//4. Edit or create additional infor for target CAP.
+	aa.cap.editAddtInfo(capDetail, additionalInfo);
+}
+function copyContactsWithAddress(pFromCapId, pToCapId)
+{
+   // Copies all contacts from pFromCapId to pToCapId and includes Contact Address objects
+   //
+   if (pToCapId == null)
+   var vToCapId = capId;
+   else
+   var vToCapId = pToCapId;
+
+   var capContactResult = aa.people.getCapContactByCapID(pFromCapId);
+   var copied = 0;
+   if (capContactResult.getSuccess())
+   {
+      var Contacts = capContactResult.getOutput();
+      for (yy in Contacts)
+      {
+         var newContact = Contacts[yy].getCapContactModel();
+
+         var newPeople = newContact.getPeople();
+         // aa.print("Seq " + newPeople.getContactSeqNumber());
+
+         var addressList = aa.address.getContactAddressListByCapContact(newContact).getOutput();
+         newContact.setCapID(vToCapId);
+         aa.people.createCapContact(newContact);
+         newerPeople = newContact.getPeople();
+         // contact address copying
+         if (addressList)
+         {
+            for (add in addressList)
+            {
+               var transactionAddress = false;
+               contactAddressModel = addressList[add].getContactAddressModel();
+               if (contactAddressModel.getEntityType() == "CAP_CONTACT")
+               {
+                  transactionAddress = true;
+                  contactAddressModel.setEntityID(parseInt(newerPeople.getContactSeqNumber()));
+               }
+               // Commit if transaction contact address
+               if(transactionAddress)
+               {
+                  var newPK = new com.accela.orm.model.address.ContactAddressPKModel();
+                  contactAddressModel.setContactAddressPK(newPK);
+                  aa.address.createCapContactAddress(vToCapId, contactAddressModel);
+               }
+               // Commit if reference contact address
+               else
+               {
+                  // build model
+                  var Xref = aa.address.createXRefContactAddressModel().getOutput();
+                  Xref.setContactAddressModel(contactAddressModel);
+                  Xref.setAddressID(addressList[add].getAddressID());
+                  Xref.setEntityID(parseInt(newerPeople.getContactSeqNumber()));
+                  Xref.setEntityType(contactAddressModel.getEntityType());
+                  Xref.setCapID(vToCapId);
+                  // commit address
+                  aa.address.createXRefContactAddress(Xref.getXRefContactAddressModel());
+               }
+
+            }
+         }
+         // end if
+         copied ++ ;
+         logDebug("Copied contact from " + pFromCapId.getCustomID() + " to " + vToCapId.getCustomID());
+      }
+   }
+   else
+   {
+      logMessage("**ERROR: Failed to get contacts: " + capContactResult.getErrorMessage());
+      return false;
+   }
+   return copied;
+}
+function copyOwner(srcCapId, targetCapId)
+{
+	//1. Get Owners with source CAPID.
+	var capOwners = getOwner(srcCapId);
+	if (capOwners == null || capOwners.length == 0)
+	{
+		return;
+	}
+	//2. Get Owners with target CAPID.
+	var targetOwners = getOwner(targetCapId);
+	//3. Check to see which owner is matched in both source and target.
+	for (loopk in capOwners)
+	{
+		sourceOwnerModel = capOwners[loopk];
+		//3.1 Set target CAPID to source Owner.
+		sourceOwnerModel.setCapID(targetCapId);
+		targetOwnerModel = null;
+		//3.2 Check to see if sourceOwner exist.
+		if (targetOwners != null && targetOwners.length > 0)
+		{
+			for (loop2 in targetOwners)
+			{
+				if (isMatchOwner(sourceOwnerModel, targetOwners[loop2]))
+				{
+					targetOwnerModel = targetOwners[loop2];
+					break;
+				}
+			}
+		}
+		//3.3 It is a matched owner model.
+		if (targetOwnerModel != null)
+		{
+			//3.3.1 Copy information from source to target.
+			aa.owner.copyCapOwnerModel(sourceOwnerModel, targetOwnerModel);
+			//3.3.2 Edit owner with source owner information. 
+			aa.owner.updateDailyOwnerWithAPOAttribute(targetOwnerModel);
+		}
+		//3.4 It is new owner model.
+		else
+		{
+			//3.4.1 Create new Owner.
+			aa.owner.createCapOwnerWithAPOAttribute(sourceOwnerModel);
+		}
+	}
+}
+// WTUA:Planning/Zoning Approval/Residential/*
+// true ^ createChildZoningApproval();
+function createChildZoningApproval(){
+	var targetCapId
+	var srcCapId = capId;
+	if(wfTask=="Zoning Review"&&wfStatus=="Accepted"){
+		targetCapId = createChild("Building","Residential","Building","Addition-Alteration",capName);
+
+
+	var recordType = "";
+	
+	var targetCapResult = aa.cap.getCap(targetCapId);
+
+	if (!targetCapResult.getSuccess()) {
+			logDebug("Could not get target cap object: " + targetCapId);
+		}
+	else	{
+		var targetCap = targetCapResult.getOutput();
+			targetAppType = targetCap.getCapType();		//create CapTypeModel object
+			targetAppTypeString = targetAppType.toString();
+			logDebug(targetAppTypeString);
+		}
+
+	var ignore = lookup("EMSE:ASI Copy Exceptions",targetAppTypeString); 
+	var ignoreArr = new Array(); 
+	if(ignore != null) 
+	{
+		ignoreArr = ignore.split("|");
+		copyAppSpecific(targetCapId, ignoreArr);
+	}
+	else
+	{
+		copyAppSpecific(targetCapId);
+	}
+	//copy License infomation
+	//copyLicensedProf(srcCapId, targetCapId);
+	//copy Address infomation
+	//copyAddresses(srcCapId, targetCapId);
+	//copy AST infomation
+	copyASITables(srcCapId, targetCapId);
+	//copy Parcel infomation
+	//copyParcels(srcCapId, targetCapId);
+	//copy People infomation
+	//copyPeople(srcCapId, targetCapId);
+	copyContactsWithAddress(srcCapId, targetCapId);
+	//copy Owner infomation
+	copyOwner(srcCapId, targetCapId);
+	//Copy CAP condition information
+	//copyCapCondition(srcCapId, targetCapId);
+	//Copy additional info.
+	copyAdditionalInfo(srcCapId, targetCapId);
+	updateWorkDesc(workDescGet(srcCapId), targetCapId);
+	}
+}
+//Return BValuatnScriptModel for additional info.
+function getAdditionalInfo(capId)
+{
+	bvaluatnScriptModel = null;
+	var s_result = aa.cap.getBValuatn4AddtInfo(capId);
+	if(s_result.getSuccess())
+	{
+		bvaluatnScriptModel = s_result.getOutput();
+		if (bvaluatnScriptModel == null)
+		{
+			logDebug("WARNING: no additional info on this CAP:" + capId);
+			bvaluatnScriptModel = null;
+		}
+	}
+	else
+	{
+		logDebug("ERROR: Failed to get additional info: " + s_result.getErrorMessage());
+		bvaluatnScriptModel = null;	
+	}
+	// Return bvaluatnScriptModel
+	return bvaluatnScriptModel;
+}
+function getCapDetailByID(capId)
+{
+	capDetailScriptModel = null;
+	var s_result = aa.cap.getCapDetail(capId);
+	if(s_result.getSuccess())
+	{
+		capDetailScriptModel = s_result.getOutput();
+		if (capDetailScriptModel == null)
+		{
+			logDebug("WARNING: no cap detail on this CAP:" + capId);
+			capDetailScriptModel = null;
+		}
+	}
+	else
+	{
+		logDebug("ERROR: Failed to get cap detail: " + s_result.getErrorMessage());
+		capDetailScriptModel = null;	
+	}
+	// Return capDetailScriptModel
+	return capDetailScriptModel;
+}
+function getOwner(capId)
+{
+	capOwnerArr = null;
+	var s_result = aa.owner.getOwnerByCapId(capId);
+	if(s_result.getSuccess())
+	{
+		capOwnerArr = s_result.getOutput();
+		if (capOwnerArr == null || capOwnerArr.length == 0)
+		{
+			logDebug("WARNING: no Owner on this CAP:" + capId);
+			capOwnerArr = null;
+		}
+	}
+	else
+	{
+		logDebug("ERROR: Failed to Owner: " + s_result.getErrorMessage());
+		capOwnerArr = null;	
+	}
+	return capOwnerArr;
+}
+function isMatchOwner(ownerScriptModel1, ownerScriptModel2)
+{
+	if (ownerScriptModel1 == null || ownerScriptModel2 == null)
+	{
+		return false;
+	}
+	var fullName1 = ownerScriptModel1.getOwnerFullName();
+	var fullName2 = ownerScriptModel2.getOwnerFullName();
+	if ((fullName1 == null && fullName2 != null) 
+		|| (fullName1 != null && fullName2 == null))
+	{
+		return false;
+	}
+	if (fullName1 != null && !fullName1.equals(fullName2))
+	{
+		return false;
+	}
+	return	true;
+}
+function getStdChoiceArray(stdChoice) {
+    var cntItems = 0;
+	var stdChoiceArray = new Array();
+    var bizDomScriptResult = aa.bizDomain.getBizDomain(stdChoice);
+    if (bizDomScriptResult.getSuccess()) {
+        var bizDomScriptObj = bizDomScriptResult.getOutput();
+        cntItems = bizDomScriptObj.size();
+        logDebug("getStdChoiceArray: size = " + cntItems);
+		if(cntItems > 0){
+			var bizDomScriptItr = bizDomScriptObj.iterator();
+			while(bizDomScriptItr.hasNext())
+			{
+				var bizBomScriptItem = bizDomScriptItr.next();
+				var stdChoiceArrayItem = new Array();
+				stdChoiceArrayItem["value"] = bizBomScriptItem.getBizdomainValue();
+				stdChoiceArrayItem["valueDesc"] = bizBomScriptItem.getDescription();
+				stdChoiceArrayItem["active"] = bizBomScriptItem.getAuditStatus();
+				stdChoiceArray.push(stdChoiceArrayItem);
+			}
+		}
+    }
+    return stdChoiceArray;
+}
+function generateReport4BatchLocal(reportName,rParams,module, mailFrom, mailTo, mailCC, templateName, eParams) {
+ 
+ 	var report=aa.reportManager.getReportInfoModelByName(reportName);
+    report=report.getOutput();
+
+	if(report != null){
+		//report.setCapId(itemCap.getCustomID());
+		report.setModule("Licenses");
+		report.setReportParameters(rParams); 
+
+		var permit=aa.reportManager.hasPermission(reportName, "admin");
+ 
+		if (permit.getOutput().booleanValue()) {
+			var reportResult = aa.reportManager.getReportResult(report);
+
+			if(reportResult) {
+				
+			try {
+				reportOutput = reportResult.getOutput();
+				var reportFile=aa.reportManager.storeReportToDisk(reportOutput);
+				reportFile=reportFile.getOutput();
+				var rFiles = new Array();
+				rFiles.push(reportFile);
+				//sendNotification(mailFrom, mailTo, mailCC, templateName, eParams, rFiles, itemCap);
+				result = aa.document.sendEmailByTemplateName(mailFrom, mailTo, mailCC, templateName, eParams, rFiles);
+				return reportFile;
+			}
+			catch(err) {
+				logDebug("An error occurred while running a report: " + err.message + " : " + err.stack);
+			}
+			}  
+			else {
+				logDebug("System failed get report: " + reportResult.getErrorType() + ":" + reportResult.getErrorMessage());
+				return false;
+			}
+		} 
+		else {
+			logDebug("You have no permission.");
+			return false;
+		}
+	}
+}
+
+function generateReport4Batch(reportName, parameters) {
+
+  //returns the report file which can be attached to an email.
+  var user = "ADMIN";   // Setting the User Name
+  var report = aa.reportManager.getReportModelByName(reportName);
+  report = report.getOutput();
+  //report.setModule("Permits");
+  //report.setCapId(itemCap);
+  //report.setReportParameters(parameters); 
+
+  var permit = aa.reportManager.hasPermission(reportName,user);
+
+  if (permit.getOutput().booleanValue()) {
+    var reportResult = aa.reportManager.runReport(parameters,report);
+    if(reportResult) {
+      return reportOutput = reportResult.getOutput();
+      
+    }  else {
+      logDebug("System failed get report: " + reportResult.getErrorType() + ":" +reportResult.getErrorMessage());
+      return false;
+    }
+  } else {
+    logDebug("You have no permission.");
+    return false;
+  }
+} 
+ 
+/**
+ * User Object
+ * Constructor:
+ * @param vUserId {string} User ID
+ * @return {boolean}
+ *
+ * Methods:
+ * getEmailTemplateParams
+ * @param params {HashTable}
+ * @param [userType] {string} Used to create email paramerters
+ * @return params {HashTable}
+ */
+function userObj(vUserId){
+	this.userID = null;
+	this.userFirstName = null;
+	this.userLastName =  null;
+	this.userMiddleName = null;
+	this.userInitial = null;
+	this.userEmail = null;
+	this.userTitle = null;
+	this.phoneNumber = null;
+	this.dailyInspUnits = null;
+	this.isInspector = null;
+	this.userStatus = null;
+	this.billingRate = null;
+	this.cashierID = null;
+	this.userObject = null;
+	this.userFullName = null;
+	
+	var iNameResult = null;
+	
+	if(vUserId)
+		iNameResult = aa.person.getUser(vUserId.toUpperCase());
+
+	if (iNameResult.getSuccess()){
+		var iUserObj = null;
+		iUserObj = iNameResult.getOutput();
+		this.userObject = iUserObj;
+		this.userID = iUserObj.getUserID();
+		this.userFirstName = iUserObj.getFirstName();
+		this.userLastName =  iUserObj.getLastName();
+		this.userMiddleName = iUserObj.getMiddleName();
+		this.userFullName = iUserObj.getFullName();
+		this.userInitial = iUserObj.getInitial();
+		this.userEmail = iUserObj.getEmail();
+		this.userTitle = iUserObj.getTitle();
+		this.phoneNumber = iUserObj.getPhoneNumber();
+		this.dailyInspUnits = iUserObj.getDailyInspUnits();
+		this.isInspector = iUserObj.getIsInspector();
+		this.userStatus = iUserObj.getUserStatus();
+		this.billingRate = iUserObj.getRate1();
+		this.cashierID = iUserObj.getCashierID();
+	}
+	else{ logDebug("**ERROR retrieving user model for" + vUserId + " : " + iNameResult.getErrorMessage()) ; return false ; }
+	
+ this.getEmailTemplateParams = function (params, userType) {
+			if(matches(userType,null,undefined,"")) userType = "user";
+			
+            addParameter(params, "$$" + userType + "LastName$$", this.userLastName);
+            addParameter(params, "$$" + userType + "FirstName$$", this.userFirstName);
+            addParameter(params, "$$" + userType + "MiddleName$$", this.userMiddleName);
+            addParameter(params, "$$" + userType + "Initials$$", this.userInitial);
+            addParameter(params, "$$" + userType + "PhoneNumber$$", this.phoneNumber);
+            addParameter(params, "$$" + userType + "Email$$", this.userEmail);
+            addParameter(params, "$$" + userType + "Title$$", this.userTitle);
+			addParameter(params, "$$" + userType + "DailyInspUnits$$", this.dailyInspUnits);
+			addParameter(params, "$$" + userType + "BillingRate$$", this.billingRate);
+			addParameter(params, "$$" + userType + "CashierID$$", this.cashierID);
+            addParameter(params, "$$" + userType + "FullName$$", this.userFullName);
+            return params;
+            }
+
+}
+
+/** ************************************************************************************** 
+*  checks for undefined or null or empty strings
+*/
+function isEmpty(pVariable) {
+	if (pVariable === undefined || pVariable == null || pVariable == "") {
+		return true;
+	} else {
+		return false;
+	}
+}
