@@ -1,0 +1,13 @@
+*
+*/
+Atlanta/**/*
+!Accela-Inspection-Routing
+!Courses
+!SubstrateAutomation
+!**/*.sql
+!**/*.txt
+!**/*.js
+!**/*.rpt
+!**/*.css
+!**/*.html
+!**/*.htm
