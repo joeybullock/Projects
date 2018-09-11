@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link href="https://fonts.googleapis.com/css?family=Maven Pro" rel="stylesheet">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="main.css">
+
+    <script src="https://maps.googleapis.com/maps/api/js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+
+    <title>Accela Inspection Routing</title>
+</head>
+<body onload="initialize()">
+    <h3>City of Atlanta - Accela Inspection Routing<img src="76x68 CoA BW Logo.jpg" style="float:right;width:100px;height:34px;"></h3>
+    <!--Form-->
+    <form id="form">
+            <label for="searchInspector">Inspector User ID</label>
+            <input class="u-full-width" type="text" id="searchInspector" name="searchInspector" autofocus>
+            
+        <div class="row">
+            <div class="two columns">
+                <label for="searchStartDate">Start Scheduled Date</label>
+                <input type="date" id="searchStartDate" name="searchStartDate">
+            </div>
+            <div class="two columns">
+                <label for="searchEndDate">End Scheduled Date</label>
+                <input type="date" id="searchEndDate" name="searchEndDate">
+            </div>
+        </div>
+            <div>
+                <br /><br />
+                <button type="submit" id="submitButton">Search</button>
+                <button type="reset" id="clearButton">Clear</button>
+            </div>
+    </form>
+
+    <!--Table-->
+    <div class="w3-container" id="tableSection">
+        <div class="inspectionTableContainer table-bordered table-striped" id="inspectionTableContainer">
+            <table class="inspectionTable" id="inspectionTable">
+                <col width="150"> <col width="150"> <col width="300"> <col width="150"> <col width="150"> <col width="150">
+                <thead>
+                    <tr>
+                        <th>Permit</th>
+                        <th>Type</th>
+                        <th>Address</th>
+                        <th>Scheduled Date</th>
+                        <th>Status</th>
+                        <th>Inspector</th>
+                    </tr>
+                </thead>
+                <tbody id="inspectionTableBody">
+                    
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!--Google Maps Div-->
+    <div id="mapSection">
+        <div id="map-canvas">
+        </div>
+        <br />
+        <div id="directions-panel">
+        </div>
+        <br />
+    </div>
+    
+    <script src="main.js"></script>
+</body>
+</html>
