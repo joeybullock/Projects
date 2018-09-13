@@ -1,0 +1,295 @@
+/*------------------------------------------------------------------------------------------------------/*/
+// Batch Job Script: BATCH TRL Schedule Decoy Insp on LICenses.js
+// Create separate batch jobs for "Active" and "About to Expire"
+/*------------------------------------------------------------------------------------------------------/*/
+
+// Testing values.  Replace with batch parameters when testing is complete
+///*
+aa.env.setValue("appGroup", "TRL");
+aa.env.setValue("appTypeType", "Retail");
+aa.env.setValue("appSubtype", "License");
+//aa.env.setValue("expStatus", "About to Expire");
+aa.env.setValue("emailAddress", "nancy.s.smith@multco.us");
+aa.env.setValue("showDebug", "Y");
+aa.env.setValue("BatchJobName", "BATCH TRL Schedule Decoy Insp on LICenses");
+//aa.env.setValue("DaysBeforeExpiration", "39");
+//aa.env.setValue("fromDate", "11/20/2017")
+//aa.env.setValue("toDate", "11/30/2017")
+//*/
+
+/*------------------------------------------------------------------------------------------------------/
+|
+| START: USER CONFIGURABLE PARAMETERS
+|
+/------------------------------------------------------------------------------------------------------*/
+var debug = "";
+var emailText = "";
+var maxSeconds = 4.5 * 60;		// number of seconds allowed for batch processing, usually < 5*60
+var message = "";
+var br = "<br>";
+var showDebug = false;
+var showMessage = false;
+var publicUserID = null;
+var publicUser = false;
+
+/*------------------------------------------------------------------------------------------------------/
+| BEGIN Includes
+/------------------------------------------------------------------------------------------------------*/
+SCRIPT_VERSION = 2.0
+
+eval(getMasterScriptText("INCLUDES_ACCELA_FUNCTIONS"));
+eval(getMasterScriptText("INCLUDES_CUSTOM"));
+eval(getScriptText("INCLUDES_BATCH"));
+
+function getMasterScriptText(vScriptName) {
+    vScriptName = vScriptName.toUpperCase();
+    var emseBiz = aa.proxyInvoker.newInstance("com.accela.aa.emse.emse.EMSEBusiness").getOutput();
+    var emseScript = emseBiz.getMasterScript(aa.getServiceProviderCode(), vScriptName);
+    return emseScript.getScriptText() + "";
+}
+
+function getScriptText(vScriptName) {
+    vScriptName = vScriptName.toUpperCase();
+    var emseBiz = aa.proxyInvoker.newInstance("com.accela.aa.emse.emse.EMSEBusiness").getOutput();
+    var emseScript = emseBiz.getScriptByPK(aa.getServiceProviderCode(), vScriptName, "ADMIN");
+    return emseScript.getScriptText() + "";
+}
+
+/*------------------------------------------------------------------------------------------------------/
+|
+| END: USER CONFIGURABLE PARAMETERS
+|
+/------------------------------------------------------------------------------------------------------*/
+showDebug = aa.env.getValue("showDebug").substring(0, 1).toUpperCase().equals("Y");
+
+sysDate = aa.date.getCurrentDate();
+batchJobResult = aa.batchJob.getJobID()
+batchJobName = "" + aa.env.getValue("BatchJobName");
+wfObjArray = null;
+
+batchJobID = 0;
+if (batchJobResult.getSuccess()) {
+    batchJobID = batchJobResult.getOutput();
+    logDebug("Batch Job " + batchJobName + " Job ID is " + batchJobID);
+}
+else
+    logDebug("Batch job ID not found " + batchJobResult.getErrorMessage());
+
+/*----------------------------------------------------------------------------------------------------/
+|
+| Start: BATCH PARAMETERS
+|
+/------------------------------------------------------------------------------------------------------*/
+//var pastStatusDate = aa.env.getValue("pastStatusDays");			// Number of days from today
+var daySpan = aa.env.getValue("daySpan");						// Days to search (6 if run weekly, 0 if daily, etc.)
+//var toDate = dateAdd(null, -parseInt(pastStatusDate));
+//var fromDate = dateAdd(toDate, -parseInt(daySpan));
+//var dFromDate = aa.date.parseDate(fromDate);					
+//var dToDate = aa.date.parseDate(toDate);						
+//var appGroup = getParam("expStatus");							//   app Group to process {TRL}
+var appGroup = getParam("appGroup");							//   app Group to process {TRL}
+var appTypeType = getParam("appTypeType");						//   app type to process {Rental License}
+var appSubtype = getParam("appSubtype");						//   app subtype to process {NA}
+var appCategory;// = getParam("appCategory");						//   app category to process {NA}
+//var includeRecordTypes = getParam("includeRecordTypes").split(",");	//   Process only these record types
+var emailAddress = getParam("emailAddress");					// email to send report
+var currentUserID = "ADMIN"; // Current User
+var disableTokens = false;		// turn off tokenizing of std choices (enables use of "{} and []")
+var useAppSpecificGroupName = false;	// Use Group name when populating App Specific Info Values
+var useTaskSpecificGroupName = false;	// Use Group name when populating Task Specific Info Values
+var enableVariableBranching = true;	// Allows use of variable names in branching.  Branches are not followed in Doc Only
+var maxEntries = 99;			// Maximum number of std choice entries.  Entries must be Left Zero Padded
+var thisExp =0;
+/*----------------------------------------------------------------------------------------------------/
+|
+| End: BATCH PARAMETERS
+|
+/------------------------------------------------------------------------------------------------------*/
+var startDate = new Date();
+var timeExpired = false;
+
+var mailFrom = lookup("ACA_EMAIL_TO_AND_FROM_SETTING", "RENEW_LICENSE_AUTO_ISSUANCE_MAILFROM");
+var acaSite = lookup("ACA_CONFIGS", "ACA_SITE");
+acaSite = acaSite.substr(0, acaSite.toUpperCase().indexOf("/ADMIN"));
+
+//logDebug("Date Range -- fromDate: " + fromDate + ", toDate: " + toDate)
+
+var startTime = startDate.getTime();			// Start timer
+var systemUserObj = aa.person.getUser("ADMIN").getOutput();
+
+if (appGroup == "")
+    appGroup = "*";
+if (appTypeType == "")
+    appTypeType = "*";
+if (appSubtype == "")
+    appSubtype = "*";
+if (appCategory == "")
+    appCategory = "*";
+var appType = appGroup + "/" + appTypeType + "/" + appSubtype + "/" + appCategory;
+logDebug("Processing:" + appType);
+
+/*------------------------------------------------------------------------------------------------------/
+| <===========Main=Loop================>
+/-----------------------------------------------------------------------------------------------------*/
+logDebug("Start of Job");
+
+if (!timeExpired) {
+    try {
+        mainProcess();
+    } catch (err) {
+        handleError(err, "kilroy");
+    }
+}
+logDebug("End of Job: Elapsed Time : " + elapsed() + " Seconds");
+
+if (emailAddress.length) {
+    aa.sendMail("noreply@accela.com", emailAddress, "", batchJobName + " Results", emailText);
+}
+/*------------------------------------------------------------------------------------------------------/
+| <===========END=Main=Loop================>
+/-----------------------------------------------------------------------------------------------------*/
+if (debug.indexOf("**ERROR") > 0) {
+    aa.env.setValue("ScriptReturnCode", "1");
+    aa.env.setValue("ScriptReturnMessage", debug);
+}
+else {
+    aa.env.setValue("ScriptReturnCode", "0");
+    if (showMessage) {
+        aa.env.setValue("ScriptReturnMessage", message);
+    }
+    if (showDebug) {
+        aa.env.setValue("ScriptReturnMessage", debug);
+    }
+}
+
+function mainProcess() {
+    var capFilterInactive = 0;
+    var capFilterError = 0;
+    var capFilterStatus = 0;
+    var capDeactivated = 0;
+    var capCount = 0;
+    var vCapId;
+    var vCapIDStrAry;
+    var fileDateObj;
+    var expDate;
+    var expDateObj;
+    var expDateString;
+    var myLic;
+    var inspDate;
+    var yy = startDate.getFullYear().toString().substr(2, 2);
+    var mm = (startDate.getMonth() + 1).toString().padZero(2);
+    var dd = startDate.getDate().toString().padZero(2);
+    var hh = startDate.getHours().toString().padZero(2);
+    var mi = startDate.getMinutes().toString().padZero(2);
+    var setDateTime = yy + mm + dd + hh + mi;
+    mm = startDate.getMonth();
+    //determine Fiscal Year end
+    if (mm > 6) {
+        var yy = (startDate.getFullYear() + 1).toString();
+    } else {
+        var yy = startDate.getFullYear();
+    }
+    var feeVersion = ("01_01_" + yy);
+    logDebug("fiscal year " + yy);
+    logDebug("Environment: " + lookup("AGENCY_CONTACT_INFO", "01_Env"));
+
+    var licResult = aa.cap.getByAppType("TRL", "Retail", "License", "NA");
+    if (licResult.getSuccess()) {
+        myLic = licResult.getOutput();
+        logDebug("Processing " + myLic.length + " expiration records");
+    } else {
+        logDebug("ERROR: Getting Expirations, reason is: " + licResult.getErrorType() + ":" + licResult.getErrorMessage());
+        return false;
+    }
+
+    for (thisLic in myLic)  // for each b1expiration (effectively, each license app)
+    {
+        if (elapsed() > maxSeconds) // only continue if time hasn't expired; capcount for testing
+            if (capCount > 10) // only continue if time hasn't expired; capcount for testing
+            {
+                logDebug("A script timeout has caused partial completion of this process.  Please re-run.  " + elapsed() + " seconds elapsed, " + maxSeconds + " allowed.");
+                timeExpired = true;
+                break;
+            }
+
+        licCap = myLic[thisLic];
+        vCapId = licCap.getCapID();
+        vCapIDStrAry = String(vCapId).split("-");
+        vCapId = aa.cap.getCapID(vCapIDStrAry[0], vCapIDStrAry[1], vCapIDStrAry[2]).getOutput();
+        capId = vCapId;
+        cap = aa.cap.getCap(vCapId).getOutput();
+        capId = aa.cap.getCapID(licCap.getCapID().getID1(), licCap.getCapID().getID2(), licCap.getCapID().getID3()).getOutput();
+        var myCap = aa.cap.getCap(myLic[thisLic].getCapID()).getOutput();
+        var myCapStatus = myCap.getCapStatus();
+        if (!capId) {
+            logDebug(altId + ": Record is deactivated, skipping");
+            capDeactivated++;
+            continue;
+        }
+
+        var vAltId = capId.getCustomID();
+        if (myCapStatus == "Issued" || myCapStatus == "About to Expire") {
+            logDebug(vAltId + " status: " + myCapStatus);
+
+            var b1ExpResult = aa.expiration.getLicensesByCapID(capId);
+            if (b1ExpResult.getSuccess()) {
+                b1Exp = b1ExpResult.getOutput();
+
+                if (b1Exp.getSuccess() && b1Exp) {
+                    //logDebug(vAltId);
+                    expDateObj = b1Exp.getExpDate();
+                    expDate = "" + expDateObj.getMonth() + "/" + expDateObj.getDayOfMonth() + "/" + expDateObj.getYear();
+                    var newDate = dateAdd(expDate + "", -180); //6 mos before ExpDate
+                    logDebug("AltID " + vAltId + "; newDate " + newDate);// + "; expInspDateString " + expInspDateString);
+
+                    var vInspArry = aa.inspection.getInspectionType("TRL Inspections", "Decoy Visit"); //getInspectionType(groupCode, inspectionType)
+                    var vSchInspArry = [];
+                    var x;
+
+                    if (vInspArry.getSuccess()) {
+                        vInspArry = vInspArry.getOutput();
+                        for (x in vInspArry) {
+                            if ((vInspArry[x].getInspectionStatus() == 'Scheduled' || vInspArry[x].getInspectionStatus() == 'Pending' || vInspArry[x].getInspectionStatus() == 'SCHEDULED')) {
+                                //vSchInspArry.push(vInspArry[x]);
+                                aa.print("Decoy Insp: " + vInspArry[x].getIdNumber() + "; scheduled on: " + +vInspArry[x].getScheduledDate().getMonth() + "/" + vInspArry[x].getScheduledDate().getDayOfMonth() + "/" + vInspArry[x].getScheduledDate().getYear());
+                            } else {
+                                var theNewInspId = multco_scheduleInspectDate("Decoy Visit", newDate); //no Decoy scheduled, so add one
+                                aa.print("Scheduled inspId " + theNewInspId);
+                                //assign inspector:
+                                var vInspModel = aa.inspection.getInspection(capId, inspId).getOutput();
+                                multco_TRL_AutoAssignInspection(theNewInspId);
+                                var theInspector = vInspModel.getInspector();
+                                aa.print("Assigned new Insp " + inspId + " to " + theInspector);
+                            }
+                        }
+                    } else {
+                        var theNewInspId = multco_scheduleInspectDate(inspType, schedDateMDY); //reschedule the inspection just cancelled
+                        aa.print("Rescheduled inspId " + theNewInspId);
+                        //assign inspector:
+                        var vInspModel = aa.inspection.getInspection(capId, inspId).getOutput();
+                        multco_TRL_AutoAssignInspection(theNewInspId);
+                        var theInspector = vInspModel.getInspector();
+                        aa.print("Assigned new Insp " + inspId + " to " + theInspector);
+                        aa.print("No Decoy inspections.");
+                    }
+                }
+                else {
+                    continue;
+                }
+            }
+            capCount++;
+        }
+    }
+    logDebug("Ignored due to CAP Status: " + capFilterStatus);
+    logDebug("Ignored due to Deactivated CAP: " + capDeactivated);
+    logDebug("Total CAPS processed: " + capCount);
+}
+
+function handleError(err, context) {
+    var rollBack = false;
+    var showError = true;
+
+    if (showError) showDebug = true;
+    logDebug((rollBack ? "**ERROR** " : "ERROR: ") + err.message + " In " + context + " Line " + err.lineNumber);
+    logDebug("Stack: " + err.stack);
+}

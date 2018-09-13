@@ -1,0 +1,60 @@
+/* ====================================================================
+ *	sbcoGetWorkflowActivity():  Retrieves the activity history for
+ *	a CAP and compares for equality various properties of each activity
+ *	with specific information available when the
+ *	WorkflowTaskUpdateAfter event fires, returning the activity item
+ *	with the latest audit date of those activities that match.
+ *	This function expects a global variable, wfAuditEpochTime, to be
+ *	set to the Epoch Time (number of milliseconds since 1/1/1970 UTC)
+ *	of the workflow object, wfTaskObj's, audit date
+ *	(wfAuditEpochTime = wfTaskObj.taskItem.auditDate.getTime()).
+ * ----------------------------------------------------------------- */
+function sbcoGetWorkflowActivity() // optional capId
+{
+  	//  Return the TaskItemScriptModel object (GPROCESS_HISTORY record) of the activity just entered
+
+	var itemCap = capId ;
+	var maxAuditDateEpochTime = 0 ;	// Wed Dec 31 16:00:00 PST 1969
+	var wfActivity = undefined ;
+
+  	if ( arguments.length > 0 )
+  		itemCap = arguments[ 0 ] ; // use cap ID specified in args
+
+	// aa.workflow.getWorkflowHistory( itemCap, itemTask, null ) fails if the itemTask is in a sub-process
+	var wfHistoryObj = aa.workflow.getWorkflowHistory( itemCap, null ) ;
+
+	if ( wfHistoryObj.getSuccess())
+		var wfHistory = wfHistoryObj.getOutput() ;
+
+	for ( var i in wfHistory )
+	{
+		if	(	wfHistory[ i ].taskDescription.equals( wfTask ) &&				// SD_PRO_DES (Task Description)
+				wfHistory[ i ].disposition.equals( wfStatus ) &&				// SD_APP_DES (Task Status)
+				(	(	wfHistory[ i ].dispositionComment == null &&			// SD_COMMENT (Comment)
+						wfComment == null
+					) ||
+					(	wfHistory[ i ].dispositionComment != null &&
+						wfComment != null &&
+						wfHistory[ i ].dispositionComment.equals( wfComment )
+					)
+				) &&
+				wfHistory[ i ].taskItem.auditDate.getTime() >= maxAuditDateEpochTime &&	// REC_DATE (Audit Date)
+				Math.abs( wfHistory[ i ].taskItem.auditDate.getTime() - wfAuditEpochTime ) < 2000 &&	// REC_DATE of GPROCESS_HISTORY record is within 2000 milliseconds of the REC_DATE of the GPROCESS record
+				wfHistory[ i ].taskItem.auditID.equals( currentUserID ) &&		// REC_FUL_NAM (Audit ID)
+				wfHistory[ i ].processID == wfProcessID &&						// RELATION_SEQ_ID (Process ID)
+				wfHistory[ i ].processCode.equals( wfProcess ) &&				// R1_PROCESS_CODE (Process Code)
+				wfHistory[ i ].stepNumber == wfStep								// SD_STP_NUM (Task Step Number)
+			)
+		{
+			maxAuditDateEpochTime = wfHistory[ i ].taskItem.auditDate.getTime() ;
+			wfActivity = wfHistory[ i ] ;
+		}
+	}
+
+	if ( wfActivity )
+		logDebug( "**INFO: sbcoGetWorkflowActivity() returning activity record " + wfActivity.processHistorySeq.toString() + " for CAP " + itemCap.getCustomID()) ;
+	else
+		logDebug( "**ERROR: getting task history for task " + wfTask + " on CAP " + itemCap.getCustomID()) ;
+
+	return wfActivity ;
+}

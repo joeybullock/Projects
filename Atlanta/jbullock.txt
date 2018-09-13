@@ -1,0 +1,5 @@
+var vUserObjPartial = undefined;
+var vUserObj = undefined;
+vUserObjPartial = vWorkFlowActivity.taskItem.sysUser; // This returns a new SysUser Object containing only the data available in the GPROCESS_HISTORY record
+vUserObj = aa.person.getUser(vUserObjPartial.firstName, vUserObjPartial.middleName, vUserObjPartial.lastName).getOutput(); // Use the available user information to get the reference SysUser object for that user
+vUserObj.getGaUserID();

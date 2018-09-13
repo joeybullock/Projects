@@ -1,0 +1,578 @@
+var toPrecision=function(value){
+  var multiplier=10000;
+  return Math.round(value*multiplier)/multiplier;
+}
+function addDate(iDate, nDays){ 
+	if(isNaN(nDays)){
+		throw("Day is a invalid number!");
+	}
+	return expression.addDate(iDate,parseInt(nDays));
+}
+
+function diffDate(iDate1,iDate2){
+	return expression.diffDate(iDate1,iDate2);
+}
+
+function parseDate(dateString){
+	return expression.parseDate(dateString);
+}
+
+function formatDate(dateString,pattern){ 
+	if(dateString==null||dateString==''){
+		return '';
+	}
+	return expression.formatDate(dateString,pattern);
+}
+
+var servProvCode = expression.getValue("$$servProvCode$$").value;
+//NEW METER VARIABLES
+var variable0 = expression.getValue("ASIT::DWR AUTHORIZATION FORM::Meter Size");
+var variable1 = expression.getValue("ASIT::DWR AUTHORIZATION FORM::Meter Type");
+var variable2 = expression.getValue("ASIT::DWR AUTHORIZATION FORM::Meter Subtype");
+var variable3 = expression.getValue("ASIT::DWR AUTHORIZATION FORM::Water System Development Charge");
+var variable4 = expression.getValue("ASIT::DWR AUTHORIZATION FORM::Commercial Water Deposit");
+var variable5 = expression.getValue("ASIT::DWR AUTHORIZATION FORM::Wastewater System Development Charge");
+var variable6 = expression.getValue("ASIT::DWR AUTHORIZATION FORM::Commercial Sewer Deposit");
+var variable7 = expression.getValue("ASIT::DWR AUTHORIZATION FORM::Permit Issuance Fee");
+var variable8 = expression.getValue("ASIT::DWR AUTHORIZATION FORM::Residential Activation Fee");
+var variable9 = expression.getValue("ASIT::DWR AUTHORIZATION FORM::Meter Price");
+
+//TV-SW TV-MISCELLANEOUS VARIABLES (Meter 1 & Septic to Sewer)
+var variable30 = expression.getValue("ASIT::DWR AUTHORIZATION FORM::TV Fee");
+var variable31 = expression.getValue("ASIT::DWR AUTHORIZATION FORM::TV Fee Linear Feet");
+var variable32 = expression.getValue("ASIT::DWR AUTHORIZATION FORM::SW TV Fee");
+var variable33 = expression.getValue("ASIT::DWR AUTHORIZATION FORM::SW TV Fee Linear Feet");
+var variable34 = expression.getValue("ASIT::DWR AUTHORIZATION FORM::Miscellaneous Fee");
+var variable35 = expression.getValue("ASIT::DWR AUTHORIZATION FORM::TV Fee Total Amount");
+var variable36 = expression.getValue("ASIT::DWR AUTHORIZATION FORM::SW TV Fee Total Amount");
+
+
+
+if (variable0.value != null) {
+	
+	//Permit Issuance Fee Amounts based on Sub-Type ONLY
+	if(variable2.value.equalsIgnoreCase('Water and Sewer')) {
+		variable7.value = String(50);
+		expression.setReturn(variable7);
+	}
+	if(variable2.value.equalsIgnoreCase('Irrigation') || variable2.value.equalsIgnoreCase('Septic') || variable2.value.equalsIgnoreCase('Fire Line')) {
+		variable7.value = String(25);
+		expression.setReturn(variable7);
+	}
+		
+	//Residential Activation Fee Amounts based on Type = 'RESIDENTIAL' ONLY
+	if(variable1.value.equalsIgnoreCase('RESIDENTIAL')) {
+		variable8.value = String(60);
+		expression.setReturn(variable8);
+	}
+	
+	//Size .75
+	if(variable0.value.equalsIgnoreCase(".75")) {
+		
+		//Meter Price based on Size and Sub-Type 
+		if(variable2.value.equalsIgnoreCase('Water and Sewer') || variable2.value.equalsIgnoreCase('Septic') || variable2.value.equalsIgnoreCase('Irrigation') || variable2.value.equalsIgnoreCase('Replacement Meter')) {
+		variable9.value = String(395);
+		//variable9.readOnly = false;
+		expression.setReturn(variable9);
+		}
+		
+		//Water System Development Charge based on Sub-Type		
+		if(variable2.value.equalsIgnoreCase('Water and Sewer') || variable2.value.equalsIgnoreCase('Septic') || variable2.value.equalsIgnoreCase('Septic')) {
+			variable3.value = String(1128);			
+			expression.setReturn(variable3);
+			
+			//Wastewater System Development Charge based on Sub-Type
+			if(variable2.value.equalsIgnoreCase('Water and Sewer')) {
+				variable5.value = String(4147);				
+				expression.setReturn(variable5);
+			}
+			//Commercial Water Deposit and Commercial Sewer Deposit based on Type and Sub-Type
+			if(variable1.value.equalsIgnoreCase('COMMERCIAL')) {
+				//Commercial Water Deposit 
+				variable4.value = String(75);
+				expression.setReturn(variable4);
+				if(variable2.value.equalsIgnoreCase('Water and Sewer')) {
+					//Commercial Sewer Deposit
+					variable6.value = String(75);
+					expression.setReturn(variable6);
+				}
+			}
+			
+		}
+	}
+	
+	//Size 1
+	if(variable0.value.equalsIgnoreCase("1")) {
+		
+		//Meter Price based on Size and Sub-Type 
+		if(variable2.value.equalsIgnoreCase('Water and Sewer') || variable2.value.equalsIgnoreCase('Septic') || variable2.value.equalsIgnoreCase('Irrigation') || variable2.value.equalsIgnoreCase('Replacement Meter')) {
+		variable9.value = String(527);
+		//variable9.readOnly = false;
+		expression.setReturn(variable9);
+		}
+		
+		//Water System Development Charge based on Sub-Type		
+		if(variable2.value.equalsIgnoreCase('Water and Sewer') || variable2.value.equalsIgnoreCase('Septic') || variable2.value.equalsIgnoreCase('Irrigation')) {
+			variable7.value = String(3610);			
+			expression.setReturn(variable7);
+			
+			//Wastewater System Development Charge based on Sub-Type
+			if(variable2.value.equalsIgnoreCase('Water and Sewer')) {
+				variable5.value = String(13270);				
+				expression.setReturn(variable5);
+			}
+			//Commercial Water Deposit and Commercial Sewer Deposit based on Type and Sub-Type
+			if(variable1.value.equalsIgnoreCase('COMMERCIAL')) {
+				//Commercial Water Deposit
+				variable4.value = String(75);
+				expression.setReturn(variable4);
+				if(variable2.value.equalsIgnoreCase('Water and Sewer')) {
+					//Commercial Sewer Deposit
+					variable6.value = String(75);
+					expression.setReturn(variable6);
+				}
+			}
+			
+		}
+	}
+	
+	//Size 1.5
+	if(variable0.value.equalsIgnoreCase("1.5")) {
+		
+		//Meter Price based on Size and Sub-Type 
+		if(variable2.value.equalsIgnoreCase('Water and Sewer') || variable2.value.equalsIgnoreCase('Septic') || variable2.value.equalsIgnoreCase('Irrigation') || variable2.value.equalsIgnoreCase('Replacement Meter')) {
+		variable9.value = String(1036);
+		//variable9.readOnly = false;
+		expression.setReturn(variable9);
+		}
+		
+		//Water System Development Charge based on Sub-Type		
+		if(variable2.value.equalsIgnoreCase('Water and Sewer') || variable2.value.equalsIgnoreCase('Septic') || variable2.value.equalsIgnoreCase('Irrigation')) {
+			variable3.value = String(8573);			
+			expression.setReturn(variable3);
+			
+			//Wastewater System Development Charge based on Sub-Type
+			if(variable2.value.equalsIgnoreCase('Water and Sewer')) {
+				variable5.value = String(31517);				
+				expression.setReturn(variable5);
+			}
+			//Commercial Water Deposit and Commercial Sewer Deposit based on Type and Sub-Type
+			if(variable1.value.equalsIgnoreCase('COMMERCIAL')) {
+				//Commercial Water Deposit
+				variable4.value = String(75);
+				expression.setReturn(variable4);
+				if(variable2.value.equalsIgnoreCase('Water and Sewer')) {
+					//Commercial Sewer Deposit
+					variable6.value = String(75);
+					expression.setReturn(variable6);
+				}
+			}
+			
+		}
+	}
+	
+	//Size 2
+	if(variable0.value.equalsIgnoreCase("2")) {
+		
+		//Meter Price based on Size and Sub-Type 
+		if(variable2.value.equalsIgnoreCase('Water and Sewer') || variable2.value.equalsIgnoreCase('Septic') || variable2.value.equalsIgnoreCase('Irrigation') || variable2.value.equalsIgnoreCase('Replacement Meter')) {
+		variable9.value = String(1248);
+		//variable9.readOnly = false;
+		expression.setReturn(variable9);
+		}
+		
+		//Water System Development Charge based on Sub-Type		
+		if(variable2.value.equalsIgnoreCase('Water and Sewer') || variable2.value.equalsIgnoreCase('Septic') || variable2.value.equalsIgnoreCase('Irrigation')) {
+			variable3.value = String(15679);			
+			expression.setReturn(variable3);
+			
+			//Wastewater System Development Charge based on Sub-Type
+			if(variable2.value.equalsIgnoreCase('Water and Sewer')) {
+				variable5.value = String(57643);				
+				expression.setReturn(variable5);
+			}
+			//Commercial Water Deposit and Commercial Sewer Deposit based on Type and Sub-Type
+			if(variable1.value.equalsIgnoreCase('COMMERCIAL')) {
+				//Commercial Water Deposit
+				variable4.value = String(75);
+				expression.setReturn(variable4);
+				if(variable2.value.equalsIgnoreCase('Water and Sewer')) {
+					//Commercial Sewer Deposit
+					variable6.value = String(75);
+					expression.setReturn(variable6);
+				}
+			}
+			
+		}
+	}
+	
+	//Size 3
+	if(variable0.value.equalsIgnoreCase("3")) {
+		
+		//Meter Price based on Size and Sub-Type 
+		if(variable2.value.equalsIgnoreCase('Water and Sewer') || variable2.value.equalsIgnoreCase('Septic') || variable2.value.equalsIgnoreCase('Irrigation') || variable2.value.equalsIgnoreCase('Replacement Meter')) {
+		variable9.value = String(1562);
+		//variable9.readOnly = false;
+		expression.setReturn(variable9);
+		}
+		
+		//Water System Development Charge based on Sub-Type		
+		if(variable2.value.equalsIgnoreCase('Water and Sewer') || variable2.value.equalsIgnoreCase('Septic') || variable2.value.equalsIgnoreCase('Irrigation')) {
+			variable3.value = String(39142);			
+			expression.setReturn(variable3);
+			
+			//Wastewater System Development Charge based on Sub-Type
+			if(variable2.value.equalsIgnoreCase('Water and Sewer')) {
+				variable5.value = String(143901);				
+				expression.setReturn(variable5);
+			}
+			//Commercial Water Deposit and Commercial Sewer Deposit based on Type and Sub-Type
+			if(variable1.value.equalsIgnoreCase('COMMERCIAL')) {
+				//Commercial Water Deposit
+				variable4.value = String(775);
+				expression.setReturn(variable4);
+				if(variable2.value.equalsIgnoreCase('Water and Sewer')) {
+					//Commercial Sewer Deposit
+					variable6.value = String(925);
+					expression.setReturn(variable6);
+				}
+			}
+			
+		}
+	}
+
+	//Size 4
+	if(variable0.value.equalsIgnoreCase("4")) {
+		
+		//Meter Price based on Size and Sub-Type 
+		if(variable2.value.equalsIgnoreCase('Water and Sewer') || variable2.value.equalsIgnoreCase('Septic') || variable2.value.equalsIgnoreCase('Irrigation') || variable2.value.equalsIgnoreCase('Replacement Meter')) {
+		variable9.value = String(2250);
+		//variable9.readOnly = false;
+		expression.setReturn(variable9);
+		}
+		
+		//Water System Development Charge based on Sub-Type		
+		if(variable2.value.equalsIgnoreCase('Water and Sewer') || variable2.value.equalsIgnoreCase('Septic') || variable2.value.equalsIgnoreCase('Irrigation')) {
+			variable3.value = String(62830);			
+			expression.setReturn(variable3);
+			
+			//Wastewater System Development Charge based on Sub-Type
+			if(variable2.value.equalsIgnoreCase('Water and Sewer')) {
+				variable5.value = String(230988);				
+				expression.setReturn(variable5);
+			}
+			//Commercial Water Deposit and Commercial Sewer Deposit based on Type and Sub-Type
+			if(variable1.value.equalsIgnoreCase('COMMERCIAL')) {
+				//Commercial Water Deposit
+				variable4.value = String(1500);
+				expression.setReturn(variable4);
+				if(variable2.value.equalsIgnoreCase('Water and Sewer')) {
+					//Commercial Sewer Deposit
+					variable6.value = String(1825);
+					expression.setReturn(variable6);
+				}
+			}
+			
+		}
+	}
+
+	//Size 6
+	if(variable0.value.equalsIgnoreCase("6")) {
+		
+		//Meter Price based on Size and Sub-Type 
+		if(variable2.value.equalsIgnoreCase('Water and Sewer') || variable2.value.equalsIgnoreCase('Septic') || variable2.value.equalsIgnoreCase('Irrigation') || variable2.value.equalsIgnoreCase('Replacement Meter')) {
+		variable9.value = String(3890);
+		//variable9.readOnly = false;
+		expression.setReturn(variable9);
+		}
+		
+		//Water System Development Charge based on Sub-Type		
+		if(variable2.value.equalsIgnoreCase('Water and Sewer') || variable2.value.equalsIgnoreCase('Septic') || variable2.value.equalsIgnoreCase('Irrigation')) {
+			variable3.value = String(125434);			
+			expression.setReturn(variable3);
+			
+			//Wastewater System Development Charge based on Sub-Type
+			if(variable2.value.equalsIgnoreCase('Water and Sewer')) {
+				variable5.value = String(461146);				
+				expression.setReturn(variable5);
+			}
+			//Commercial Water Deposit and Commercial Sewer Deposit based on Type and Sub-Type
+			if(variable1.value.equalsIgnoreCase('COMMERCIAL')) {
+				//Commercial Water Deposit
+				variable4.value = String(3500);
+				expression.setReturn(variable4);
+				if(variable2.value.equalsIgnoreCase('Water and Sewer')) {
+					//Commercial Sewer Deposit
+					variable6.value = String(4200);
+					expression.setReturn(variable6);
+				}
+			}
+			
+		}
+	}
+	
+	//Size 8
+	if(variable0.value.equalsIgnoreCase("8")) {
+		
+		//Meter Price based on Size and Sub-Type 
+		if(variable2.value.equalsIgnoreCase('Water and Sewer') || variable2.value.equalsIgnoreCase('Septic') || variable2.value.equalsIgnoreCase('Irrigation') || variable2.value.equalsIgnoreCase('Replacement Meter')) {
+		variable9.value = String(6627);
+		//variable9.readOnly = false;
+		expression.setReturn(variable9);
+		}
+		
+		//Water System Development Charge based on Sub-Type		
+		if(variable2.value.equalsIgnoreCase('Water and Sewer') || variable2.value.equalsIgnoreCase('Septic') || variable2.value.equalsIgnoreCase('Irrigation')) {
+			variable3.value = String(200671);			
+			expression.setReturn(variable3);
+			
+			//Wastewater System Development Charge based on Sub-Type
+			if(variable2.value.equalsIgnoreCase('Water and Sewer')) {
+				variable5.value = String(737751);				
+				expression.setReturn(variable5);
+			}
+			//Commercial Water Deposit and Commercial Sewer Deposit based on Type and Sub-Type
+			if(variable1.value.equalsIgnoreCase('COMMERCIAL')) {
+				//Commercial Water Deposit
+				variable4.value = String(6800);
+				expression.setReturn(variable4);
+				if(variable2.value.equalsIgnoreCase('Water and Sewer')) {
+					//Commercial Sewer Deposit
+					variable6.value = String(8200);
+					expression.setReturn(variable6);
+				}
+			}
+			
+		}
+	}
+	
+	//Size 10
+	if(variable0.value.equalsIgnoreCase("10")) {
+		
+		//Meter Price based on Size and Sub-Type 
+		if(variable2.value.equalsIgnoreCase('Water and Sewer') || variable2.value.equalsIgnoreCase('Irrigation') || variable2.value.equalsIgnoreCase('Replacement Meter')) {
+		variable9.value = String(9630);
+		//variable9.readOnly = false;
+		expression.setReturn(variable9);
+		}
+		
+		if(variable2.value.equalsIgnoreCase('Septic')) {
+		variable6.value = String(25481);
+		//variable9.readOnly = false;
+		expression.setReturn(variable9);
+		}
+		
+		//Water System Development Charge based on Sub-Type		
+		if(variable2.value.equalsIgnoreCase('Water and Sewer') || variable2.value.equalsIgnoreCase('Septic') || variable2.value.equalsIgnoreCase('Irrigation')) {
+			variable3.value = String(0);			
+			expression.setReturn(variable3);
+			
+			//Wastewater System Development Charge based on Sub-Type
+			if(variable2.value.equalsIgnoreCase('Water and Sewer')) {
+				variable5.value = String(0);				
+				expression.setReturn(variable5);
+			}
+			//Commercial Water Deposit and Commercial Sewer Deposit based on Type and Sub-Type
+			if(variable1.value.equalsIgnoreCase('COMMERCIAL')) {
+				//Commercial Water Deposit
+				variable4.value = String(6800);
+				expression.setReturn(variable4);
+				if(variable2.value.equalsIgnoreCase('Water and Sewer')) {
+					//Commercial Sewer Deposit
+					variable6.value = String(8200);
+					expression.setReturn(variable6);
+				}
+			}
+			
+		}
+	}
+	
+	//Size 12
+	if(variable0.value.equalsIgnoreCase("12")) {
+		
+		//Meter Price based on Size and Sub-Type 
+		if(variable2.value.equalsIgnoreCase('Water and Sewer') || variable2.value.equalsIgnoreCase('Irrigation') || variable2.value.equalsIgnoreCase('Replacement Meter')) {
+		variable9.value = String(16211);
+		//variable9.readOnly = false;
+		expression.setReturn(variable9);
+		}
+		
+		//Water System Development Charge based on Sub-Type		
+		if(variable2.value.equalsIgnoreCase('Water and Sewer') || variable2.value.equalsIgnoreCase('Septic') || variable2.value.equalsIgnoreCase('Irrigation')) {
+			variable3.value = String(0);			
+			expression.setReturn(variable3);
+			
+			//Wastewater System Development Charge based on Sub-Type
+			if(variable2.value.equalsIgnoreCase('Water and Sewer')) {
+				variable5.value = String(0);				
+				expression.setReturn(variable5);
+			}
+			//Commercial Water Deposit and Commercial Sewer Deposit based on Type and Sub-Type
+			if(variable1.value.equalsIgnoreCase('COMMERCIAL')) {
+				//Commercial Water Deposit
+				variable4.value = String(0);
+				expression.setReturn(variable4);
+				if(variable2.value.equalsIgnoreCase('Water and Sewer')) {
+					//Commercial Sewer Deposit
+					variable6.value = String(0);
+					expression.setReturn(variable6);
+				}
+			}
+			
+		}
+	}
+	
+	//TV Fee for Meter 1 != 'Septic to Sewer'
+	if(variable31.value > .1 && (variable2.value.equalsIgnoreCase('Water and Sewer') || variable2.value.equalsIgnoreCase('Septic') || variable2.value.equalsIgnoreCase('Irrigation'))) {
+		variable30.value = (parseFloat(variable31.value) * 0.15);
+		expression.setReturn(variable30);
+		variable35.value = (parseFloat(variable30.value) + parseFloat(45));
+		expression.setReturn(variable35);
+	}
+	
+	//SW TV Fee for Meter 1 != 'Septic to Sewer'
+	if(variable33.value > .1 &&(variable2.value.equalsIgnoreCase('Water and Sewer') || variable2.value.equalsIgnoreCase('Septic') || variable2.value.equalsIgnoreCase('Septic to Sewer') || variable2.value.equalsIgnoreCase('Fire Line') ||variable2.value.equalsIgnoreCase('Replacement Meter') || variable2.value.equalsIgnoreCase('Irrigation'))) {
+		variable32.value = (parseFloat(variable33.value) * 0.15);
+		expression.setReturn(variable32);
+		variable36.value = (parseFloat(variable32.value) + parseFloat(45));
+		expression.setReturn(variable36);
+	}
+	
+	
+	
+}
+
+//Meter 1 Sub-Type = Septic To Sewer 
+if (variable2.value.equalsIgnoreCase('Septic to Sewer')) {
+	//Permit Issuance Fee Amounts based on Sub-Type ONLY
+		variable7.value = String(25);
+		expression.setReturn(variable7);
+	
+	//Wastewater System Development Fees based on Meter 1 Size
+	//Size .75
+	if(variable0.value.equalsIgnoreCase(".75")) {
+		variable5.value = String(4147);
+		expression.setReturn(variable5);
+		//Commercial Sewer Deposit Fees based Type = "COMMERCIAL"
+		if(variable1.value.equalsIgnoreCase("COMMERCIAL")) {
+			variable6.value = String(75);
+			expression.setReturn(variable6);
+		}
+	}
+	
+	//Size 1
+	if(variable0.value.equalsIgnoreCase("1")) {
+		variable5.value = String(13270);
+		expression.setReturn(variable5);
+		//Commercial Sewer Deposit Fees based Type = "COMMERCIAL"
+		if(variable1.value.equalsIgnoreCase("COMMERCIAL")) {
+			variable6.value = String(75);
+			expression.setReturn(variable6);
+		}
+	}
+	
+	//Size 1.5
+	if(variable0.value.equalsIgnoreCase("1.5")) {
+		variable5.value = String(31517);
+		expression.setReturn(variable5);
+		//Commercial Sewer Deposit Fees based Type = "COMMERCIAL"
+		if(variable1.value.equalsIgnoreCase("COMMERCIAL")) {
+			variable6.value = String(75);
+			expression.setReturn(variable6);
+		}
+	}
+	
+	//Size 2
+	if(variable0.value.equalsIgnoreCase("2")) {
+		variable5.value = String(57643);
+		expression.setReturn(variable5);
+		//Commercial Sewer Deposit Fees based Type = "COMMERCIAL"
+		if(variable1.value.equalsIgnoreCase("COMMERCIAL")) {
+			variable6.value = String(75);
+			expression.setReturn(variable6);
+		}
+	}
+	
+	//Size 3
+	if(variable0.value.equalsIgnoreCase("3")) {
+		variable5.value = String(143901);
+		expression.setReturn(variable5);
+		//Commercial Sewer Deposit Fees based Type = "COMMERCIAL"
+		if(variable1.value.equalsIgnoreCase("COMMERCIAL")) {
+			variable6.value = String(925);
+			expression.setReturn(variable6);
+		}
+	}
+	
+	//Size 4
+	if(variable0.value.equalsIgnoreCase("4")) {
+		variable5.value = String(230988);
+		expression.setReturn(variable5);
+		//Commercial Sewer Deposit Fees based Type = "COMMERCIAL"
+		if(variable1.value.equalsIgnoreCase("COMMERCIAL")) {
+			variable6.value = String(1825);
+			expression.setReturn(variable6);
+		}
+	}
+	
+	//Size 6
+	if(variable0.value.equalsIgnoreCase("6")) {
+		variable5.value = String(461146);
+		expression.setReturn(variable5);
+		//Commercial Sewer Deposit Fees based Type = "COMMERCIAL"
+		if(variable1.value.equalsIgnoreCase("COMMERCIAL")) {
+			variable6.value = String(4200);
+			expression.setReturn(variable6);
+		}
+	}
+	
+	//Size 8
+	if(variable0.value.equalsIgnoreCase("8")) {
+		variable5.value = String(737751);
+		expression.setReturn(variable5);
+		//Commercial Sewer Deposit Fees based Type = "COMMERCIAL"
+		if(variable1.value.equalsIgnoreCase("COMMERCIAL")) {
+			variable6.value = String(8200);
+			expression.setReturn(variable6);
+		}
+	}
+	
+	//Size 10
+	if(variable0.value.equalsIgnoreCase("10")) {
+		//variable5.value = String(0);
+		//expression.setReturn(variable5);
+		//Commercial Sewer Deposit Fees based Type = "COMMERCIAL"
+		if(variable1.value.equalsIgnoreCase("COMMERCIAL")) {
+			variable6.value = String(8200);
+			expression.setReturn(variable6);
+		}
+	}
+	
+	//Size 12
+	if(variable0.value.equalsIgnoreCase("12")) {
+		//variable5.value = String(0);
+		//expression.setReturn(variable5);
+		//Commercial Sewer Deposit Fees based Type = "COMMERCIAL"
+		if(variable1.value.equalsIgnoreCase("COMMERCIAL")) {
+			//variable6.value = String(0);
+			//expression.setReturn(variable6);
+		}
+	}
+
+	//TV Fee for Meter 1 = 'Septic to Sewer'
+	 {if(variable31.value > .1)
+		variable30.value = (parseFloat(variable31.value) * 0.15);
+		expression.setReturn(variable30);
+		variable38.value = (parseFloat(variable30.value) + parseFloat(45));
+		expression.setReturn(variable38);
+		//Set Meter 1 TV Fee Amount to 0 so it calcs in Septic to Sewer Column only
+		variable35.value = String(0);
+		expression.setReturn(variable35);
+	}
+	
+	//SW TV Fee for Meter 1 = 'Septic to Sewer'
+	if(variable33.value > 0) {
+		variable32.value = (parseFloat(variable33.value) * 0.15);
+		expression.setReturn(variable32);
+		variable36.value = (parseFloat(variable32.value) + parseFloat(45));
+		expression.setReturn(variable36);	}
