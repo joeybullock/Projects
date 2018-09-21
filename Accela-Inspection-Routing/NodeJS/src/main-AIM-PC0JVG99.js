@@ -1,6 +1,6 @@
 //  Declare variables
 var express = require("express");
-var bodyParcer = require("body-parser");
+//  var bodyParcer = require("body-parser");
 var https = require("https");
 var app = express();
 
