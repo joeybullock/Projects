@@ -16,7 +16,7 @@ var accelaOptions = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
         'x-accela-appid': '636603438780966771',
-        'Authorization': 'cuFMBkmFDT_yQoriLiOCwQefhaQQuJ_b-wDPlMXscTnovHrIXxjGVVwx95-1_p0AG-b5vrCuRyx1qzpR-uhoXXDfmKHiEiUJkEr0jLibZ-l3emk_UxBuWOycLitDZK8-yhT8_s0ryR8qzoDzNUUKmJimWbnnFCve3CnFvGcHI3boQ05rLUuwtzA20gw65zQCOyPMaD3CUhzKWkY_E-0TXyiFloGQcdGbxBRa6sJXNSHrO3kkLBYI9NC35oE8zhlieklQifvL4cYiq3cuzo0Nqsm-ZkjfWcMsbPNJjVNhrCytIWUsbTYWR2CrQIZnt2j2GbGjPPdVkleOFU8rFtjkQJLJLgPbYdmsqsLMr04NkiJaQALJ5W1NEZtUtT6EpZhx82VcBhHlDfMMWQyHLQSgerm_dAl_XabBfgT_fy6IlPs1'
+        'Authorization': 'UpUmXEZdVU86B5Xj6XNBphRL5jeWrHpP85PA1tZbPnJ9WvamrBCsB1X2yyR1in2kogvKE8QkIR4ruPds4GGcTxAE6Avl1LfSox0_5YQChlZ6xUv8-K12A6tLTTTHKkqPwwigFzAVJKo2QgMCgiUBuOwI3KoFsOqoiCtrXlXg--qu0RrGCSLnEJoBZS64jFQEHvODLEjRPEbbA0S0QZ2lT0qo4c5h5rRMF6BaUKsPEqBrYEjF4819egyvPiXiY62F6c31ttIt8U8Av7BvbcznhqpGKOsVxcCl9IccbbM6v6wqreng7cZ_n_I_obyvJLDA-hDnP3_7eloLAcg5OahkhE116i8HC9mtXSSFKqp_KjIHkYGCQQXIhCWleXdV2QoAbX3Kt3pbt80GSpnyTX7n5ia9Y1Y9i0vt_3PskAodhHuOWRWq7g36R5C0YimDDhs40'
     }
 };
 var request = {};
@@ -67,7 +67,6 @@ function formSubmitted() {
     
     searchStart();
     search(searchTerm, startDate, endDate);
-//    filterResults(resultAll);
 //   displayResults(result);
 //    calcRoute(mapsReadyAddresses);
 }
@@ -79,23 +78,27 @@ function filterResults(resultAll) {
     let filteredArray = resultAll.result.filter(function(itm) {
         return scheduled.indexOf(itm.status.value) > -1;
     });
+    console.log('result: ' + filteredArray);
     return {result: filteredArray};
 }
 
 //  Call Accela API
 function search(searchTerm, startDate, endDate) {
     console.log('search');
+    console.log('path: ' + accelaOptions.host + accelaOptions.path);
     API_URL = `${API_URL}${searchTerm}${startDate}${endDate}`;
-    https.request(accelaOptions, res => {
-        console.log('Connected to Accela API');
+    https.request(accelaOptions, (res) => {
+        console.log('statusCode: ' + res.statusCode);
         var data = '';
-        res.on('result', (chunk) => {
-            console.log(chunk);
+        res.on('data', (chunk) => {
             data += chunk;
         });
         res.on('end', () => {
+            console.log('Length of data: ' + Object.keys(data).length);
             var dataParsed = JSON.parse(data);
-            console.log(dataParsed);
+            console.log('Length of dataParsed: ' + Object.keys(dataParsed).length);
+            var filteredResults = filterResults(dataParsed);
+            displayResults(filteredResults);
         });
         
     }).on("error", (err) => {
@@ -113,16 +116,17 @@ function search(searchTerm, startDate, endDate) {
 function displayResults(returnResult) {
     console.log('displayResults');
     returnResult.forEach(returnResultEach => {
-        recordId.push(returnResultEach.recordId.customId);
-        inspectionType.push(returnResultEach.type.value);
-        scheduleDate = returnResultEach.scheduleDate.split("-");
-        scheduledDateToShort.push(scheduleDate[1] + "/" + scheduleDate[2] + "/" + scheduleDate[0]);
-        inspectionStatus.push(returnResultEach.status.value);
-        inspectorFullName.push(returnResultEach.inspectorFullName);
+        //recordId.push(returnResultEach.recordId.customId);
+        //inspectionType.push(returnResultEach.type.value);
+        //scheduleDate = returnResultEach.scheduleDate.split("-");
+        //scheduledDateToShort.push(scheduleDate[1] + "/" + scheduleDate[2] + "/" + scheduleDate[0]);
+        //inspectionStatus.push(returnResultEach.status.value);
+        //inspectorFullName.push(returnResultEach.inspectorFullName);
         // Push address to variable to pass into Google Maps routing
-        //fullLineAddresses.push(returnResultEach.address.streetStart + ' ' + returnResultEach.address.streetName + ' ' + returnResultEach.address.streetSuffix.text + ' ' + returnResultEach.address.streetSuffixDirection.text + ', ' + returnResultEach.address.city + ', ' + returnResultEach.address.state.text + ' ' + returnResultEach.address.postalCode);
-        mapsReadyAddresses.push(returnResultEach.address.streetStart + '+' + returnResultEach.address.streetName + '+' + returnResultEach.address.streetSuffix.text + '+' + returnResultEach.address.streetSuffixDirection.text + '+' + returnResultEach.address.city + '+' + returnResultEach.address.state.text + '+' + returnResultEach.address.postalCode);
-    })
+        fullLineAddresses.push(returnResultEach.address.streetStart + ' ' + returnResultEach.address.streetName + ' ' + returnResultEach.address.streetSuffix.text + ' ' + returnResultEach.address.streetSuffixDirection.text + ', ' + returnResultEach.address.city + ', ' + returnResultEach.address.state.text + ' ' + returnResultEach.address.postalCode);
+        //mapsReadyAddresses.push(returnResultEach.address.streetStart + '+' + returnResultEach.address.streetName + '+' + returnResultEach.address.streetSuffix.text + '+' + returnResultEach.address.streetSuffixDirection.text + '+' + returnResultEach.address.city + '+' + returnResultEach.address.state.text + '+' + returnResultEach.address.postalCode);
+    });
+    console.log(mapsReadyAddresses[0]);
 return mapsReadyAddresses;
 }
 
