@@ -8,5 +8,21 @@
   "keywords": [],
   "author": "Joey Bullock <joeybullock@gmail.com>",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "node-fetch": "^2.3.0"
+  },
+  "devDependencies": {
+    "eslint": "^5.15.1"
+  },
+  "eslintConfig": {
+    "env": {
+      "browser": true,
+      "node": true
+    },
+    "rules": {
+      "curly": "error",
+      "quotes": "error"
+    }
+  }
 }
