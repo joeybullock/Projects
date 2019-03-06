@@ -14,14 +14,14 @@ time.sleep(10)
 driver.switch_to.frame(1)
 
 servprovcode_box = driver.find_element_by_id("servProvCode")
-servprovcode_box.send_keys('ATLANTA_GA')
+servprovcode_box.send_keys('###########')
 pyautogui.press('tab')
 
 user_box = driver.find_element_by_name("username")
-user_box.send_keys('jbullock')
+user_box.send_keys('##########')
 
 pass_box = driver.find_element_by_name("password")
-pass_box.send_keys('Springt1me18')
+pass_box.send_keys('##########')
 
 pass_box.send_keys(Keys.RETURN)
 time.sleep(20)
