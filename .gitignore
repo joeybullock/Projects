@@ -1,0 +1,6 @@
+PROJ4JS/proj4.code-workspace
+*/node_modules/*
+*/package-lock.json
+package.json
+*.code-workspace
+Scrape/Scrape.code-workspace
