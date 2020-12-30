@@ -9,7 +9,11 @@ def html2text(node):
     if node.isSelfClosing:
         return ' '
     return ''.join([html2text(x) for x in node.contents])
-def downloadPodcast(n,f):
+def downloadPodcast(f,p):
+  thisPodcast = requests.get(p)
+  with open(f+".mp3", "wb") as file:
+    file.write(thisPodcast.content)
+
   return
 with requests.Session() as req:
   podnames = []
@@ -23,7 +27,7 @@ with requests.Session() as req:
         podcast = (str(child).split("url=\"")[1].split("\"/>")[0])
       if (idx == 15):
         filename = (str(child).split("&gt;")[1].split("&lt")[0].replace("&amp;", "&").replace("amp; "," ").replace("nbsp;", " "))
-      downloadPodcast(filename, podcast)
+        downloadPodcast(filename, podcast)
   res = "\n".join("{} {}".format(x, y) for x, y in zip(podnames, podcasts))
   print(res)
     
