@@ -27,6 +27,12 @@ function onFormSubmit(e) {
   var amountPaid = responses["Amount Paid"][0].trim();
   var trip = responses["For Trip"][0];
   var date = responses["Date Paid"][0];
+  var sendEmail = responses["Send Email Receipt"][0] == "Send";
+  var paymentOrEvent = responses["Payment or Event"][0];
+  if (paymentOrEvent == "Event/Fundraiser") {
+    EMAIL_TEMPLATE_DOC_URL = "https://docs.google.com/document/d/1RNMKpk60h-XV1XlpvhQkFcO_ml2aa3t5QdeCmDB5otY/edit";
+  }
+  var eventFundraiser = responses["Event/Fundraiser"][0];
 
   var sheet = SpreadsheetApp.getActiveSheet();
   var row = sheet.getActiveRange().getRow();
@@ -46,21 +52,26 @@ function onFormSubmit(e) {
   sheet.getRange(row, tripAmountColumn).setValue(tripAmount);
 
   //  Handle Emails and create status
-  var emails = getEmails(name);
-  var status = "";
-  for (var m in emails) {
-    MailApp.sendEmail({
-      to: emails[m],
-      subject: EMAIL_SUBJECT,
-      htmlBody: createEmailBody(name, receiptNumber, amountPaid, trip, balance),
-    });
-    status += emails[m] + ";";
-  }
-  if (status) {
-    status = status.slice(0,-1);
+  if (sendEmail) {
+    var emails = getEmails(name);
+    var status = "";
+    for (var m in emails) {
+      MailApp.sendEmail({
+        to: emails[m],
+        subject: EMAIL_SUBJECT,
+        htmlBody: createEmailBody(name, eventFundraiser, receiptNumber, amountPaid, trip, balance),
+      });
+      status += emails[m] + ";";
+    }
+    if (status) {
+      status = status.slice(0,-1);
+    } else {
+      status = "No email sent";
+    }
   } else {
     status = "No email sent";
   }
+
 
   //  Append the status to response row
   var statusColumn = e.values.length + 2;
@@ -78,7 +89,7 @@ function onFormSubmit(e) {
  * @param {string[]} topics - List of topics to include in the email body.
  * @return {string} - The email body as an HTML string.
  */
-function createEmailBody(name, receipt, paid, trip, balance) {
+function createEmailBody(name, eventFundraiser, receipt, paid, trip, balance) {
   /*
   var topicsHtml = topics.map(function(topic) {
   var url = topicUrls[topic];
@@ -90,6 +101,7 @@ function createEmailBody(name, receipt, paid, trip, balance) {
   var docId = DocumentApp.openByUrl(EMAIL_TEMPLATE_DOC_URL).getId();
   var emailBody = docToHtml(docId);
   emailBody = emailBody.replace(/{{NAME}}/g, name);
+  emailBody = emailBody.replace(/{{EVENTFUNDRAISER}}/g, eventFundraiser);
   emailBody = emailBody.replace(/{{RECEIPT}}/g, receipt);
   emailBody = emailBody.replace(/{{AMOUNTPAID}}/g, paid);
   emailBody = emailBody.replace(/{{DESTINATION}}/g, trip);
