@@ -66,7 +66,7 @@ function onFormSubmit(e) {
     if (status) {
       status = status.slice(0,-1);
     } else {
-      status = "No email sent";
+      status = "No email found";
     }
   } else {
     status = "No email sent";
@@ -177,7 +177,7 @@ function getBalance(name, trip) {
     }
   }
 
-  var responsesSheet = doc.getSheetByName("Form Responses 1");
+  var responsesSheet = doc.getSheetByName("Form Responses");
   var amountPaid = 0;
   var responseHeaders = responsesSheet.getRange(1, 1, 1, responsesSheet.getLastColumn()).getValues()[0];
   var nameColumn = responseHeaders.indexOf("Name") + 1;
