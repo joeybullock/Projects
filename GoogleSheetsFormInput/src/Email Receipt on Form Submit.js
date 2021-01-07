@@ -64,7 +64,7 @@ function onFormSubmit(e) {
       status += emails[m] + ";";
     }
     if (status) {
-      status = status.slice(0,-1);
+      status = status.slice(0, -1);
     } else {
       status = "No email found";
     }
@@ -83,10 +83,7 @@ function onFormSubmit(e) {
 }
 
 /**
- * Creates email body and includes the links based on topic.
- *
- * @param {string} recipient - The recipient's email address.
- * @param {string[]} topics - List of topics to include in the email body.
+ * Creates email body from Google Doc and replaces variables with passed params
  * @return {string} - The email body as an HTML string.
  */
 function createEmailBody(name, eventFundraiser, receipt, paid, trip, balance) {
@@ -153,7 +150,7 @@ function getEmails(name) {
   if (emailColumn !== -1) {
     var data = emailSheet.getRange(2, nameColumn, emailSheet.getLastRow(), emailColumn).getValues();
     for (var e = 0; e < data.length; e++) {
-      if (matches(data[e][nameColumn - 1], name)) {
+      if (data[e][nameColumn - 1].toUpperCase().indexOf(name.toUpperCase()) > -1) {
         emails.push(data[e][emailColumn - 1]);
       }
     }
@@ -170,9 +167,18 @@ function getBalance(name, trip) {
   var amountColumn = headers.indexOf("Amount") + 1;
   if (amountColumn) {
     var data = tripAmountsSheet.getRange(2, 1, tripAmountsSheet.getLastRow(), tripAmountsSheet.getLastColumn()).getValues();
+    //  Look for individualized trip amounts
     for (var a = 0; a < data.length; a++) {
-      if (matches(data[a][tripColumn - 1], trip)) {
-        tripAmount += parseFloat(data[a][amountColumn - 1]);
+      if (data[a][tripColumn - 1] && data[a][tripColumn - 1].toUpperCase().indexOf(trip.toUpperCase()) > -1 && data[a][tripColumn - 1].toUpperCase().indexOf(name.toUpperCase()) > -1) {
+        tripAmount = parseFloat(data[a][amountColumn - 1]);
+      }
+    }
+    //  If individualized trip amounts not found, look for general trip amounts
+    if (!tripAmount) {
+      for (var b = 0; b < data.length; b++) {
+        if (data[b][tripColumn - 1] && data[b][tripColumn - 1].toUpperCase().indexOf(trip.toUpperCase()) > -1 && data[b][tripColumn - 1].indexOf("-") == -1) {
+          tripAmount = parseFloat(data[b][amountColumn - 1]);
+        }
       }
     }
   }
