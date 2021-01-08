@@ -12,6 +12,14 @@ function installTrigger() {
     .create();
 }
 
+function onOpen() {
+  var ui = SpreadsheetApp.getUi();
+  // Or DocumentApp or FormApp.
+  ui.createMenu('Recalculations')
+      .addItem('Balance Remaining & Trip Amounts', 'recalculateBalanceRemaining')
+      .addToUi();
+}
+
 /**
  * Sends a customized email for every response on a form.
  * 
@@ -43,7 +51,7 @@ function onFormSubmit(e) {
   sheet.getRange(row, receiptColumn).setValue(receiptNumber);
 
   //  Get remaining balance & trip amount and append to response row
-  var tripAmountAndBalance = getBalance(name, trip)
+  var tripAmountAndBalance = getBalance(name, trip, null);
   var tripAmount = tripAmountAndBalance[0];
   var balance = tripAmountAndBalance[1];
   var balanceColumn = e.values.length + 3;
@@ -134,8 +142,8 @@ function createReceiptNumber(row) {
   month = month.slice(-2);
   var date = "0" + String(today.getDate());
   date = date.slice(-2);
-  row = "0" + row.toString();
-  row = row.slice(-2);
+  row = "00" + row.toString();
+  row = row.slice(-3);
   return year + month + date + row;
 }
 
@@ -158,7 +166,7 @@ function getEmails(name) {
   return emails;
 }
 
-function getBalance(name, trip) {
+function getBalance(name, trip, toRow) {
   var doc = SpreadsheetApp.getActiveSpreadsheet();
   var tripAmountsSheet = doc.getSheetByName("Trip Amounts");
   var tripAmount = 0;
@@ -183,14 +191,15 @@ function getBalance(name, trip) {
     }
   }
 
-  var responsesSheet = doc.getSheetByName("Form Responses");
+  var responseSheet = doc.getSheetByName("Form Responses");
+  if (!toRow) toRow = responseSheet.getLastRow();
   var amountPaid = 0;
-  var responseHeaders = responsesSheet.getRange(1, 1, 1, responsesSheet.getLastColumn()).getValues()[0];
+  var responseHeaders = responseSheet.getRange(1, 1, 1, responseSheet.getLastColumn()).getValues()[0];
   var nameColumn = responseHeaders.indexOf("Name") + 1;
   var amountPaidColumn = responseHeaders.indexOf("Amount Paid") + 1;
   var responseTripColumn = responseHeaders.indexOf("For Trip") + 1;
   if (amountPaidColumn) {
-    var responseData = responsesSheet.getRange(2, 1, responsesSheet.getLastRow(), responsesSheet.getLastColumn()).getValues();
+    var responseData = responseSheet.getRange(2, 1, toRow, responseSheet.getLastColumn()).getValues();
     for (var p = 0; p < responseData.length; p++) {
       if (matches(responseData[p][nameColumn - 1], name)) {
         if (matches(responseData[p][responseTripColumn - 1], trip)) {
@@ -206,6 +215,23 @@ function getBalance(name, trip) {
   return tripAmountAndBalance;
 }
 
+function recalculateBalanceRemaining() {
+  var doc = SpreadsheetApp.getActiveSpreadsheet();
+  var responseSheet = doc.getSheetByName("Form Responses");
+  var responseHeaders = responseSheet.getRange(1, 1, 1, responseSheet.getLastColumn()).getValues()[0];
+  var nameColumn = responseHeaders.indexOf("Name") + 1;
+  var forTripColumn = responseHeaders.indexOf("For Trip") + 1;
+  var balanceRemainingColumn = responseHeaders.indexOf("Balance Remaining") + 1;
+  var tripAmountColumn = responseHeaders.indexOf("Trip Amount") + 1;
+  var responseData = responseSheet.getRange(2, 1, responseSheet.getLastRow(), responseSheet.getLastColumn()).getValues();
+  var thisPersonsBalance = [];
+  for (var eachRow = 2; eachRow < responseData.length + 1; eachRow++) {
+    thisPersonsBalance = getBalance(responseData[eachRow - 2][nameColumn - 1], responseData[eachRow - 2][forTripColumn - 1], eachRow - 1);
+    responseSheet.getRange(eachRow, tripAmountColumn).setValue(thisPersonsBalance[0]);
+    responseSheet.getRange(eachRow, balanceRemainingColumn).setValue(thisPersonsBalance[1]);
+  }
+}
+
 function matches(eVal, argList) {
   for (var i = 1; i < arguments.length; i++) {
     if (arguments[i] == eVal) {
@@ -213,4 +239,8 @@ function matches(eVal, argList) {
     }
   }
   return false;
+}
+
+function distinctArray(array) {
+  return [...new Set(array)];
 }
