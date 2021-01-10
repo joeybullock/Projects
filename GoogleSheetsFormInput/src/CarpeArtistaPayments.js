@@ -15,8 +15,9 @@ function installTrigger() {
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
   // Or DocumentApp or FormApp.
-  ui.createMenu('Recalculations')
-      .addItem('Balance Remaining & Trip Amounts', 'recalculateBalanceRemaining')
+  ui.createMenu('Scripts')
+      .addItem('Recalc Balance Remaining & Trip Amounts', 'recalculateBalanceRemaining')
+      .addItem('Generate and send receipt emails for selected rows', 'sendEmailAgain')
       .addToUi();
 }
 
@@ -230,6 +231,92 @@ function recalculateBalanceRemaining() {
     responseSheet.getRange(eachRow, tripAmountColumn).setValue(thisPersonsBalance[0]);
     responseSheet.getRange(eachRow, balanceRemainingColumn).setValue(thisPersonsBalance[1]);
   }
+}
+
+function sendEmailAgain() {
+  //  Make sure things are up to date
+  var ui = SpreadsheetApp.getUi();
+  var sheet = SpreadsheetApp.getActiveSheet();
+  var selection = sheet.getSelection();
+  if (selection.getActiveSheet().getName() != "Form Responses") {
+    //  Can't run if selected range isn't on the Form Responses sheet
+    ui.alert("Please select rows in the Form Responses sheet to send emails");
+    return;
+  }
+  var ranges = selection.getActiveRangeList().getRanges();
+  Logger.log("ranges.length: " + ranges.length);
+  var rows = [];
+  for (var range in ranges) {
+    var firstRowInRange = ranges[range].getRow();
+    rows.push(firstRowInRange);
+    Logger.log("firstRowInRange: " + firstRowInRange);
+    if (ranges[range].getNumRows() > 1) {
+      for (var rr = 1; rr < ranges[range].getNumRows(); rr++) {
+        var nextRow = firstRowInRange + rr;
+        Logger.log("nextRow: " + nextRow);
+        rows.push(nextRow);
+      }
+    }
+  }
+  if (!rows.length) return;
+  var promRows = "";
+  var promptRows = rows;
+  for (var prom in promptRows) {
+    promRows += promptRows[prom] + ", ";
+  }
+  promRows = promRows.slice(0, -2);
+  var prompt = ui.alert("Send emails to people from rows " + promRows + "?", ui.ButtonSet.YES_NO);
+  if (prompt == ui.Button.NO) {
+    return;
+  }
+
+  //  Get header names
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  //  Get column numbers
+  var nameColumn = headers.indexOf("Name") + 1;
+  var sendEmailReceiptColumn = headers.indexOf("Send Email Receipt") + 1;
+  var emailSentColumn = headers.indexOf("Email Sent") + 1;
+  var eventFundraiserColumn = headers.indexOf("Event/Fundraiser") + 1;
+  var forTripColumn = headers.indexOf("For Trip") + 1;
+  var amountPaidColumn = headers.indexOf("Amount Paid") + 1;
+  var receiptNumberColumn = headers.indexOf("Receipt Number") + 1;
+  var balanceRemainingColumn = headers.indexOf("Balance Remaining") + 1;
+
+  //  For each distinct row
+  for (var row = 0; row < rows.length; row++) {
+    //  Get all the values for the row
+    var name = sheet.getRange(rows[row], nameColumn).getValue();
+    var eventFundraiser = sheet.getRange(rows[row], eventFundraiserColumn).getValue();
+    var forTrip = sheet.getRange(rows[row], forTripColumn).getValue();
+    var amountPaid = sheet.getRange(rows[row], amountPaidColumn).getValue();
+    var receiptNumber = sheet.getRange(rows[row], receiptNumberColumn).getValue();
+    var balanceRemaining = sheet.getRange(rows[row], balanceRemainingColumn).getValue();
+    //  Get the email addresses
+    var emails = getEmails(name);
+    var status = "";
+    for (var m in emails) {
+      MailApp.sendEmail({ 
+        to: emails[m],
+        subject: EMAIL_SUBJECT,
+        htmlBody: createEmailBody(name, eventFundraiser, receiptNumber, amountPaid, forTrip, balanceRemaining),
+      });
+      status += emails[m] + ";";
+    }
+    if (status) {
+      status = status.slice(0, -1);
+    } else {
+      status = "No email found";
+    }
+    sheet.getRange(rows[row], sendEmailReceiptColumn).setValue("Send");
+    sheet.getRange(rows[row], emailSentColumn).setValue(status);
+  } 
+}
+
+function regenerateNewReceiptNumbers() {
+  var doc = SpreadsheetApp.getActiveSpreadsheet();
+  var responseSheet = doc.getSheetByName("Form Responses");
+  var responseHeaders = responseSheet.getRange(1, 1, 1, responseSheet.getLastColumn()).getValues()[0];
+  var nameColumn = responseHeaders.indexOf("Name") + 1;
 }
 
 function matches(eVal, argList) {
