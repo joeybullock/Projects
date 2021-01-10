@@ -312,13 +312,6 @@ function sendEmailAgain() {
   } 
 }
 
-function regenerateNewReceiptNumbers() {
-  var doc = SpreadsheetApp.getActiveSpreadsheet();
-  var responseSheet = doc.getSheetByName("Form Responses");
-  var responseHeaders = responseSheet.getRange(1, 1, 1, responseSheet.getLastColumn()).getValues()[0];
-  var nameColumn = responseHeaders.indexOf("Name") + 1;
-}
-
 function matches(eVal, argList) {
   for (var i = 1; i < arguments.length; i++) {
     if (arguments[i] == eVal) {
