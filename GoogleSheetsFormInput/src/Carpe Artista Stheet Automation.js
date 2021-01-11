@@ -1,4 +1,4 @@
-var EMAIL_TEMPLATE_DOC_URL = "https://docs.google.com/document/d/1Lmja4QAUQPuuAEfUA_mQGDfvsng9VP-wN0bM_4KI11g/edit";
+var EMAIL_TEMPLATE_DOC_URL = "https://docs.google.com/document/d/1ySKt-7bwuZwd6BtAxFqZ3P7U-_BH1Pvj3zqQ4bzLRDQ/edit";
 var EMAIL_SUBJECT = "Carpe Artista Receipt";
 var SCRIPT_PROP = PropertiesService.getScriptProperties(); // new property service
 
@@ -39,7 +39,7 @@ function onFormSubmit(e) {
   var sendEmail = responses["Send Email Receipt"][0] == "Send";
   var paymentOrEvent = responses["Payment or Event"][0];
   if (paymentOrEvent == "Event/Fundraiser") {
-    EMAIL_TEMPLATE_DOC_URL = "https://docs.google.com/document/d/1RNMKpk60h-XV1XlpvhQkFcO_ml2aa3t5QdeCmDB5otY/edit";
+    EMAIL_TEMPLATE_DOC_URL = "https://docs.google.com/document/d/1ZvyudJvehgJSJyQnNnMAaR3n4uiuEdZRP902MH4bB7E/edit";
   }
   var eventFundraiser = responses["Event/Fundraiser"][0];
 
@@ -311,6 +311,7 @@ function sendEmailAgain() {
     sheet.getRange(rows[row], emailSentColumn).setValue(status);
   } 
 }
+
 
 function matches(eVal, argList) {
   for (var i = 1; i < arguments.length; i++) {
