@@ -16,9 +16,9 @@ function onOpen() {
   var ui = SpreadsheetApp.getUi();
   // Or DocumentApp or FormApp.
   ui.createMenu('Scripts')
-      .addItem('Recalc Balance Remaining & Trip Amounts', 'recalculateBalanceRemaining')
-      .addItem('Generate and send receipt emails for selected rows', 'sendEmailAgain')
-      .addToUi();
+    .addItem('Recalc Balance Remaining at time of payment', 'recalculateBalanceRemaining')
+    .addItem('Generate and send receipt emails for selected rows', 'sendEmailAgain')
+    .addToUi();
 }
 
 /**
@@ -55,10 +55,12 @@ function onFormSubmit(e) {
   var tripAmountAndBalance = getBalance(name, trip, null);
   var tripAmount = tripAmountAndBalance[0];
   var balance = tripAmountAndBalance[1];
-  var balanceColumn = e.values.length + 3;
+  var balanceColumn = e.values.length + 4;
   sheet.getRange(row, balanceColumn).setValue(balance);
-  var tripAmountColumn = e.values.length + 4;
+  /*  sheet formula will calculate trip amounts from now on
+  var tripAmountColumn = e.values.length + 5;
   sheet.getRange(row, tripAmountColumn).setValue(tripAmount);
+  */
 
   //  Handle Emails and create status
   if (sendEmail) {
@@ -222,14 +224,17 @@ function recalculateBalanceRemaining() {
   var responseHeaders = responseSheet.getRange(1, 1, 1, responseSheet.getLastColumn()).getValues()[0];
   var nameColumn = responseHeaders.indexOf("Name") + 1;
   var forTripColumn = responseHeaders.indexOf("For Trip") + 1;
-  var balanceRemainingColumn = responseHeaders.indexOf("Balance Remaining") + 1;
+  var balanceRemainingColumn = responseHeaders.indexOf("Balance Remaining at time of payment") + 1;
   var tripAmountColumn = responseHeaders.indexOf("Trip Amount") + 1;
   var responseData = responseSheet.getRange(2, 1, responseSheet.getLastRow(), responseSheet.getLastColumn()).getValues();
   var thisPersonsBalance = [];
   for (var eachRow = 2; eachRow < responseData.length + 1; eachRow++) {
     thisPersonsBalance = getBalance(responseData[eachRow - 2][nameColumn - 1], responseData[eachRow - 2][forTripColumn - 1], eachRow - 1);
-    responseSheet.getRange(eachRow, tripAmountColumn).setValue(thisPersonsBalance[0]);
-    responseSheet.getRange(eachRow, balanceRemainingColumn).setValue(thisPersonsBalance[1]);
+    if (!isNaN(thisPersonsBalance[1])) {
+      //    sheet formula will calculate trip amounts from now on
+      //    responseSheet.getRange(eachRow, tripAmountColumn).setValue(thisPersonsBalance[0]);
+      responseSheet.getRange(eachRow, balanceRemainingColumn).setValue(thisPersonsBalance[1]);
+    }
   }
 }
 
@@ -280,7 +285,7 @@ function sendEmailAgain() {
   var forTripColumn = headers.indexOf("For Trip") + 1;
   var amountPaidColumn = headers.indexOf("Amount Paid") + 1;
   var receiptNumberColumn = headers.indexOf("Receipt Number") + 1;
-  var balanceRemainingColumn = headers.indexOf("Balance Remaining") + 1;
+  var balanceRemainingColumn = headers.indexOf("Current Balance Remaining") + 1;
 
   //  For each distinct row
   for (var row = 0; row < rows.length; row++) {
@@ -295,7 +300,7 @@ function sendEmailAgain() {
     var emails = getEmails(name);
     var status = "";
     for (var m in emails) {
-      MailApp.sendEmail({ 
+      MailApp.sendEmail({
         to: emails[m],
         subject: EMAIL_SUBJECT,
         htmlBody: createEmailBody(name, eventFundraiser, receiptNumber, amountPaid, forTrip, balanceRemaining),
@@ -309,18 +314,8 @@ function sendEmailAgain() {
     }
     sheet.getRange(rows[row], sendEmailReceiptColumn).setValue("Send");
     sheet.getRange(rows[row], emailSentColumn).setValue(status);
-  } 
+  }
 }
-
-//  TODO: Finish this function
-/*
-function regenerateNewReceiptNumbers() {
-  var doc = SpreadsheetApp.getActiveSpreadsheet();
-  var responseSheet = doc.getSheetByName("Form Responses");
-  var responseHeaders = responseSheet.getRange(1, 1, 1, responseSheet.getLastColumn()).getValues()[0];
-  var nameColumn = responseHeaders.indexOf("Name") + 1;
-}
-*/
 
 function matches(eVal, argList) {
   for (var i = 1; i < arguments.length; i++) {
