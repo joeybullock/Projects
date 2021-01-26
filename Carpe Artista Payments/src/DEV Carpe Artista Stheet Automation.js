@@ -1,6 +1,23 @@
 var EMAIL_TEMPLATE_DOC_URL = "https://docs.google.com/document/d/1Lmja4QAUQPuuAEfUA_mQGDfvsng9VP-wN0bM_4KI11g/edit";
+var EVENT_EMAIL_TEMPLATE_DOC_URL = "https://docs.google.com/document/d/1RNMKpk60h-XV1XlpvhQkFcO_ml2aa3t5QdeCmDB5otY/edit";
+var FORM_ID = "1UnxeOVlMS3Vdk7OlkrdbwQ8B4owoc5DueS8v3wqo0DY";
+var FORM_ITEM_FOR_TRIP = "225290537";
 var EMAIL_SUBJECT = "Carpe Artista Receipt";
 var SCRIPT_PROP = PropertiesService.getScriptProperties(); // new property service
+
+/**
+ * Form ID's:
+Name: 2032958687
+Amount Paid: 602672250
+For Trip: 225290537
+: 449691158
+Send Email Receipt: 1254954954
+Payment or Event: 407454692
+Date Paid: 57021869
+Notes (Check Number, Payment Method, etc): 241945240
+Event/Fundraiser Info: 144043923
+Event/Fundraiser: 411551078
+ */
 
 /**
  * Installs a trigger on the Spreadsheet for when a Form response is submitted.
@@ -13,11 +30,13 @@ function installTrigger() {
 }
 
 function onOpen() {
+  replaceNameHeader();
+  //  Create 'Scripts' menu
   var ui = SpreadsheetApp.getUi();
-  // Or DocumentApp or FormApp.
   ui.createMenu('Scripts')
     .addItem('Recalc Balance Remaining at time of payment', 'recalculateBalanceRemaining')
-    .addItem('Generate and send receipt emails for selected rows', 'sendEmailAgain')
+    .addItem('Send receipt emails for selected rows', 'sendEmailAgain')
+    .addItem('Create new trip', 'createNewTrip')
     .addToUi();
 }
 
@@ -27,6 +46,9 @@ function onOpen() {
  * @param {Object} event - Form submit event
  */
 function onFormSubmit(e) {
+  //  Make sure Name header is there
+  replaceNameHeader();
+
   var responses = e.namedValues;
 
   // If the question title is a label, it can be accessed as an object field.
@@ -39,7 +61,7 @@ function onFormSubmit(e) {
   var sendEmail = responses["Send Email Receipt"][0] == "Send";
   var paymentOrEvent = responses["Payment or Event"][0];
   if (paymentOrEvent == "Event/Fundraiser") {
-    EMAIL_TEMPLATE_DOC_URL = "https://docs.google.com/document/d/1RNMKpk60h-XV1XlpvhQkFcO_ml2aa3t5QdeCmDB5otY/edit";
+    EMAIL_TEMPLATE_DOC_URL = EVENT_EMAIL_TEMPLATE_DOC_URL;
   }
   var eventFundraiser = responses["Event/Fundraiser"][0];
 
@@ -151,6 +173,7 @@ function createReceiptNumber(row) {
 }
 
 function getEmails(name) {
+  replaceNameHeader();
   var doc = SpreadsheetApp.getActiveSpreadsheet();
   var emailSheet = doc.getSheetByName("Emails");
 
@@ -161,7 +184,7 @@ function getEmails(name) {
   if (emailColumn !== -1) {
     var data = emailSheet.getRange(2, nameColumn, emailSheet.getLastRow(), emailColumn).getValues();
     for (var e = 0; e < data.length; e++) {
-      if (data[e][nameColumn - 1].toUpperCase().indexOf(name.toUpperCase()) > -1) {
+      if (data[e][nameColumn - 1] && data[e][nameColumn - 1].toUpperCase().indexOf(name.toUpperCase()) > -1) {
         emails.push(data[e][emailColumn - 1]);
       }
     }
@@ -170,6 +193,7 @@ function getEmails(name) {
 }
 
 function getBalance(name, trip, toRow) {
+  replaceNameHeader();
   var doc = SpreadsheetApp.getActiveSpreadsheet();
   var tripAmountsSheet = doc.getSheetByName("Trip Amounts");
   var tripAmount = 0;
@@ -180,14 +204,14 @@ function getBalance(name, trip, toRow) {
     var data = tripAmountsSheet.getRange(2, 1, tripAmountsSheet.getLastRow(), tripAmountsSheet.getLastColumn()).getValues();
     //  Look for individualized trip amounts
     for (var a = 0; a < data.length; a++) {
-      if (data[a][tripColumn - 1] && data[a][tripColumn - 1].toUpperCase().indexOf(trip.toUpperCase()) > -1 && data[a][tripColumn - 1].toUpperCase().indexOf(name.toUpperCase()) > -1) {
+      if ((data[a][tripColumn - 1]) && (data[a][tripColumn - 1].toUpperCase().indexOf(trip.toUpperCase()) > -1 && data[a][tripColumn - 1].toUpperCase().indexOf(name.toUpperCase()) > -1)) {
         tripAmount = parseFloat(data[a][amountColumn - 1]);
       }
     }
     //  If individualized trip amounts not found, look for general trip amounts
     if (!tripAmount) {
       for (var b = 0; b < data.length; b++) {
-        if (data[b][tripColumn - 1] && data[b][tripColumn - 1].toUpperCase().indexOf(trip.toUpperCase()) > -1 && data[b][tripColumn - 1].indexOf("-") == -1) {
+        if ((data[b][tripColumn - 1]) && (data[b][tripColumn - 1].toUpperCase().indexOf(trip.toUpperCase()) > -1 && data[b][tripColumn - 1].indexOf("-") == -1)) {
           tripAmount = parseFloat(data[b][amountColumn - 1]);
         }
       }
@@ -219,6 +243,7 @@ function getBalance(name, trip, toRow) {
 }
 
 function recalculateBalanceRemaining() {
+  replaceNameHeader();
   var doc = SpreadsheetApp.getActiveSpreadsheet();
   var responseSheet = doc.getSheetByName("Form Responses");
   var responseHeaders = responseSheet.getRange(1, 1, 1, responseSheet.getLastColumn()).getValues()[0];
@@ -240,6 +265,8 @@ function recalculateBalanceRemaining() {
 
 function sendEmailAgain() {
   //  Make sure things are up to date
+  replaceNameHeader();
+  //  Make sure they're selecting from the Form Responses sheet
   var ui = SpreadsheetApp.getUi();
   var sheet = SpreadsheetApp.getActiveSheet();
   var selection = sheet.getSelection();
@@ -271,7 +298,7 @@ function sendEmailAgain() {
   }
   promRows = promRows.slice(0, -2);
   var prompt = ui.alert("Send emails to people from rows " + promRows + "?", ui.ButtonSet.YES_NO);
-  if (prompt == ui.Button.NO) {
+  if (prompt != ui.Button.YES) {
     return;
   }
 
@@ -315,6 +342,97 @@ function sendEmailAgain() {
     sheet.getRange(rows[row], sendEmailReceiptColumn).setValue("Send");
     sheet.getRange(rows[row], emailSentColumn).setValue(status);
   }
+}
+
+function createNewTrip() {
+  //  Make sure name header is there
+  replaceNameHeader();
+  //  continue
+  var ui = SpreadsheetApp.getUi();
+  var newTrip = ui.prompt("What's the name of the new trip?");
+  if (newTrip.getSelectedButton() == ui.Button.OK) {
+    newTrip = newTrip.getResponseText();
+  } else {
+    return;
+  }
+  var costOfNewTrip = ui.prompt("What's the cost of a singular trip?");
+  if (costOfNewTrip.getSelectedButton() == ui.Button.OK) {
+    costOfNewTrip = costOfNewTrip.getResponseText();
+  } else {
+    return;
+  }
+  var verify = ui.alert("Create new trip " + newTrip + " with a cost of " + costOfNewTrip + "?", ui.ButtonSet.YES_NO);
+  if (verify != ui.Button.YES) {
+    return;
+  }
+  //  Insert trip into form
+  var form = FormApp.openById(FORM_ID);
+  var forTripItem = form.getItemById(FORM_ITEM_FOR_TRIP).asMultipleChoiceItem();
+  var currentTripChoices = forTripItem.getChoices();
+  var choices = [];
+  choices.push(newTrip);
+  for (var ec in currentTripChoices) {
+    choices.push(currentTripChoices[ec].getValue());
+  }
+  forTripItem
+    .setChoiceValues(choices)
+    .showOtherOption(false);
+    //  Insert trip cost into Trip Amounts sheet
+  var doc = SpreadsheetApp.getActiveSpreadsheet();
+  var tripsSheet = doc.getSheetByName("Trip Amounts");
+  tripsSheet.insertRowBefore(2);
+  tripsSheet.getRange(2,1).setValue(newTrip);
+  tripsSheet.getRange(2,2).setValue(costOfNewTrip);
+  //  Create new Summary sheet
+  var pivotTableSheetCopyFrom = doc.getSheetByName("Houston Summary");
+  var pivotTableSheetCopyTo = pivotTableSheetCopyFrom.copyTo(doc);
+  pivotTableSheetCopyTo.setName(newTrip + " Summary");
+  //  Get pivot table
+  var pivotTableCopyTo = pivotTableSheetCopyTo.getPivotTables()[0]
+  var pivotTableCopyToFilters = pivotTableCopyTo.getFilters();
+  //  remove existing filters
+  pivotTableCopyToFilters.map(f => f.remove());
+  //  create new filter criteria
+  var newFilterCriteria = SpreadsheetApp.newFilterCriteria()
+    .setVisibleValues([newTrip])
+    .build();
+  //  apply new filter criteria to copied pivot table
+  pivotTableCopyTo.addFilter(4, newFilterCriteria);
+  //  customize the new sheet tab
+  //  move to position 1
+  doc.setActiveSheet(pivotTableSheetCopyTo)
+  doc.moveActiveSheet(1);
+  //  pick random color
+  var lightColors = ["LightCoral","PaleGreen","Cornsilk","LightPink","LightBlue","Lavender"];
+  var darkColors  = ["Crimson","Green","Goldenrod","MediumVioletRed","RoyalBlue","MediumOrchid"];
+  var randomColorNumber = Math.floor(Math.random() * lightColors.length);
+  var lightColor = lightColors[randomColorNumber];
+  var darkColor = darkColors[randomColorNumber];
+  //  set tab color
+  pivotTableSheetCopyTo.setTabColor(darkColor);
+  //  set background cell color
+  pivotTableSheetCopyTo.getRange(1,3).setBackground(darkColor);
+  pivotTableSheetCopyTo.getRange(1,4).setBackground(lightColor);
+  //  edit charts
+  var charts = pivotTableSheetCopyTo.getCharts();
+  //  edit bar chart
+  var barChartBuilder = charts[0].modify().setOption('title', newTrip).asColumnChart().setColors([darkColor, lightColor]);
+  pivotTableSheetCopyTo.updateChart(barChartBuilder.build());
+  /*  for some reason, scorecard charts are not editable via script
+  //  edit paid scorecard chart
+  var paidScoreChart = charts[1].modify().setOption('colors', [darkColor]).setOption('title', newTrip + " Total Paid");
+  pivotTableSheetCopyTo.updateChart(paidScoreChart.build());
+  //  edit balance scorecard chart
+  var balanceScoreChart = charts[2].modify().setOption('colors', [lightColor]).setOption('title', newTrip + " Total Balance");
+  pivotTableSheetCopyTo.updateChart(balanceScoreChart.build());
+  */
+}
+
+function replaceNameHeader() {
+    //  Replace Name header if missing
+    var doc = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Form Responses");
+    var nameHeader = doc.getRange(1,2).getValue();
+    if (!nameHeader) doc.getRange(1,2).setValue("Name");
 }
 
 function matches(eVal, argList) {
