@@ -296,7 +296,7 @@ function sendEmailAgain() {
     }
   }
   if (!rows.length) return;
-  var prompt = ui.alert("Send emails to people from rows " + rows.join(", ") + "?", ui.ButtonSet.YES_NO);
+  var prompt = ui.alert("Send emails to people from rows " + rows.sort().join(", ") + "?", ui.ButtonSet.YES_NO);
   if (prompt != ui.Button.YES) {
     return;
   }
