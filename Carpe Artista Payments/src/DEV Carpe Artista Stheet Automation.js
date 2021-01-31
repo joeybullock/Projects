@@ -64,6 +64,8 @@ function onFormSubmit(e) {
     EMAIL_TEMPLATE_DOC_URL = EVENT_EMAIL_TEMPLATE_DOC_URL;
   }
   var eventFundraiser = responses["Event/Fundraiser"][0];
+  var notes = responses["Notes (Check Number, Payment Method, etc)"][0];
+  if (!notes) notes = "";
 
   var sheet = SpreadsheetApp.getActiveSheet();
   var row = sheet.getActiveRange().getRow();
@@ -92,7 +94,7 @@ function onFormSubmit(e) {
       MailApp.sendEmail({
         to: emails[m],
         subject: EMAIL_SUBJECT,
-        htmlBody: createEmailBody(name, eventFundraiser, receiptNumber, amountPaid, trip, balance),
+        htmlBody: createEmailBody(name, eventFundraiser, receiptNumber, amountPaid, trip, balance, notes),
       });
       status += emails[m] + ";";
     }
@@ -119,7 +121,7 @@ function onFormSubmit(e) {
  * Creates email body from Google Doc and replaces variables with passed params
  * @return {string} - The email body as an HTML string.
  */
-function createEmailBody(name, eventFundraiser, receipt, paid, trip, balance) {
+function createEmailBody(name, eventFundraiser, receipt, paid, trip, balance, notes) {
   /*
   var topicsHtml = topics.map(function(topic) {
   var url = topicUrls[topic];
@@ -136,6 +138,8 @@ function createEmailBody(name, eventFundraiser, receipt, paid, trip, balance) {
   emailBody = emailBody.replace(/{{AMOUNTPAID}}/g, paid);
   emailBody = emailBody.replace(/{{DESTINATION}}/g, trip);
   emailBody = emailBody.replace(/{{BALANCE}}/g, balance);
+  if (notes) notes = "Notes: " + notes;
+  emailBody = emailBody.replace(/{{NOTES}}/g, notes);
   return emailBody;
 }
 
@@ -276,28 +280,22 @@ function sendEmailAgain() {
     return;
   }
   var ranges = selection.getActiveRangeList().getRanges();
-  Logger.log("ranges.length: " + ranges.length);
+  //Logger.log("ranges.length: " + ranges.length);
   var rows = [];
   for (var range in ranges) {
     var firstRowInRange = ranges[range].getRow();
     rows.push(firstRowInRange);
-    Logger.log("firstRowInRange: " + firstRowInRange);
+    //Logger.log("firstRowInRange: " + firstRowInRange);
     if (ranges[range].getNumRows() > 1) {
       for (var rr = 1; rr < ranges[range].getNumRows(); rr++) {
         var nextRow = firstRowInRange + rr;
-        Logger.log("nextRow: " + nextRow);
+        //Logger.log("nextRow: " + nextRow);
         rows.push(nextRow);
       }
     }
   }
   if (!rows.length) return;
-  var promRows = "";
-  var promptRows = rows;
-  for (var prom in promptRows) {
-    promRows += promptRows[prom] + ", ";
-  }
-  promRows = promRows.slice(0, -2);
-  var prompt = ui.alert("Send emails to people from rows " + promRows + "?", ui.ButtonSet.YES_NO);
+  var prompt = ui.alert("Send emails to people from rows " + rows.join(", ") + "?", ui.ButtonSet.YES_NO);
   if (prompt != ui.Button.YES) {
     return;
   }
@@ -313,6 +311,7 @@ function sendEmailAgain() {
   var amountPaidColumn = headers.indexOf("Amount Paid") + 1;
   var receiptNumberColumn = headers.indexOf("Receipt Number") + 1;
   var balanceRemainingColumn = headers.indexOf("Current Balance Remaining") + 1;
+  var notesColumn = headers.indexOf("Notes (Check Number, Payment Method, etc)") + 1;
 
   //  For each distinct row
   for (var row = 0; row < rows.length; row++) {
@@ -323,6 +322,8 @@ function sendEmailAgain() {
     var amountPaid = sheet.getRange(rows[row], amountPaidColumn).getValue();
     var receiptNumber = sheet.getRange(rows[row], receiptNumberColumn).getValue();
     var balanceRemaining = sheet.getRange(rows[row], balanceRemainingColumn).getValue();
+    var notes = sheet.getRange(rows[row], notesColumn).getValue();
+    if (!notes) notes = "";
     //  Get the email addresses
     var emails = getEmails(name);
     var status = "";
@@ -330,7 +331,7 @@ function sendEmailAgain() {
       MailApp.sendEmail({
         to: emails[m],
         subject: EMAIL_SUBJECT,
-        htmlBody: createEmailBody(name, eventFundraiser, receiptNumber, amountPaid, forTrip, balanceRemaining),
+        htmlBody: createEmailBody(name, eventFundraiser, receiptNumber, amountPaid, forTrip, balanceRemaining, notes),
       });
       status += emails[m] + ";";
     }
