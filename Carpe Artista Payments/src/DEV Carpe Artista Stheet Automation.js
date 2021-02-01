@@ -1,9 +1,17 @@
-var EMAIL_TEMPLATE_DOC_URL = "https://docs.google.com/document/d/1Lmja4QAUQPuuAEfUA_mQGDfvsng9VP-wN0bM_4KI11g/edit";
-var EVENT_EMAIL_TEMPLATE_DOC_URL = "https://docs.google.com/document/d/1RNMKpk60h-XV1XlpvhQkFcO_ml2aa3t5QdeCmDB5otY/edit";
-var FORM_ID = "1UnxeOVlMS3Vdk7OlkrdbwQ8B4owoc5DueS8v3wqo0DY";
-var FORM_ITEM_FOR_TRIP = "225290537";
-var EMAIL_SUBJECT = "Carpe Artista Receipt";
+var EMAIL_TEMPLATE_DOC_URL =        "https://docs.google.com/document/d/1Lmja4QAUQPuuAEfUA_mQGDfvsng9VP-wN0bM_4KI11g/edit";
+var EVENT_EMAIL_TEMPLATE_DOC_URL =  "https://docs.google.com/document/d/1RNMKpk60h-XV1XlpvhQkFcO_ml2aa3t5QdeCmDB5otY/edit";
+var FORM_ID =                       "1UnxeOVlMS3Vdk7OlkrdbwQ8B4owoc5DueS8v3wqo0DY";
+var FORM_ITEM_FOR_TRIP =            "225290537";
+var EMAIL_SUBJECT =                 "Carpe Artista Receipt";
 var SCRIPT_PROP = PropertiesService.getScriptProperties(); // new property service
+
+/*---------------------------
+Developed for Carpe Artista by Joey Bullock (joeybullock@gmail.com), December 2020
+V1: On form submit, calculate balance remaining, trip amount, and receipt number. Generate and send email with receipt.
+V2: Remove 'Trip Amount' calculation by script to allow sheet formula to calculate. Repurpose calculate 'Balance Remaining' to 'Balance Remaining at time of payment' because
+    sheet formula now calculates total balance remaining. Add menu scripts for 'Recalc Balance Remaining at time of payment' and 'Send receipt emails for selected rows'.
+V3: Add 'Create new trip' menu script
+---------------------------*/
 
 /**
  * Form ID's:
