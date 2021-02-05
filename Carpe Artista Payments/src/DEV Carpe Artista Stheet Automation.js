@@ -283,6 +283,7 @@ function sendEmailAgain() {
   replaceNameHeader();
   //  Make sure they're selecting from the Form Responses sheet
   var ui = SpreadsheetApp.getUi();
+  var doc = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = SpreadsheetApp.getActiveSheet();
   var selection = sheet.getSelection();
   if (selection.getActiveSheet().getName() != "Form Responses") {
@@ -354,7 +355,7 @@ function sendEmailAgain() {
     sheet.getRange(rows[row], sendEmailReceiptColumn).setValue("Send");
     sheet.getRange(rows[row], emailSentColumn).setValue(status);
   }
-  sheet.toast("Emails sent!");
+  doc.toast("Emails sent!");
 }
 
 function createNewTrip() {
