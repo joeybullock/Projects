@@ -2,6 +2,7 @@ var EMAIL_TEMPLATE_DOC_URL =        "https://docs.google.com/document/d/1ySKt-7b
 var EVENT_EMAIL_TEMPLATE_DOC_URL =  "https://docs.google.com/document/d/1ZvyudJvehgJSJyQnNnMAaR3n4uiuEdZRP902MH4bB7E/edit";
 var FORM_ID =                       "1Vs2pwyGGOtaOnFW4LqHVzahylzwJHObNa7WgjUVmEgs";
 var FORM_ITEM_FOR_TRIP =            "225290537";
+var FORM_ITEM_NAME =                "2032958687";
 var EMAIL_SUBJECT =                 "Carpe Artista Receipt";
 var SCRIPT_PROP = PropertiesService.getScriptProperties(); // new property service
 
@@ -43,10 +44,11 @@ function onOpen() {
   //  Create 'Scripts' menu
   var ui = SpreadsheetApp.getUi();
   ui.createMenu('Scripts')
-    .addItem('Recalc Balance Remaining at time of payment', 'recalculateBalanceRemaining')
-    .addItem('Send receipt emails for selected rows', 'sendEmailAgain')
-    .addItem('Create new trip', 'createNewTrip')
-    .addToUi();
+  .addItem('Create new person', 'createNewPerson')
+  .addItem('Create new trip', 'createNewTrip')
+  .addItem('Send receipt emails for selected rows', 'sendEmailAgain')
+  .addItem('Recalc Balance Remaining at time of payment', 'recalculateBalanceRemaining')
+  .addToUi();
 }
 
 /**
@@ -194,7 +196,7 @@ function getEmails(name) {
   var emails = [];
   var nameColumn = headers.indexOf("Name") + 1;
   var emailColumn = headers.indexOf("Email") + 1;
-  if (emailColumn !== -1) {
+  if (emailColumn) {
     var data = emailSheet.getRange(2, nameColumn, emailSheet.getLastRow(), emailColumn).getValues();
     for (var e = 0; e < data.length; e++) {
       if (data[e][nameColumn - 1] && data[e][nameColumn - 1].toUpperCase().indexOf(name.toUpperCase()) > -1) {
@@ -274,6 +276,7 @@ function recalculateBalanceRemaining() {
       responseSheet.getRange(eachRow, balanceRemainingColumn).setValue(thisPersonsBalance[1]);
     }
   }
+  doc.toast("Recalculate Balance Remaining at time of payment complete!");
 }
 
 function sendEmailAgain() {
@@ -352,6 +355,7 @@ function sendEmailAgain() {
     sheet.getRange(rows[row], sendEmailReceiptColumn).setValue("Send");
     sheet.getRange(rows[row], emailSentColumn).setValue(status);
   }
+  sheet.toast("Emails sent!");
 }
 
 function createNewTrip() {
@@ -387,12 +391,12 @@ function createNewTrip() {
   forTripItem
     .setChoiceValues(choices)
     .showOtherOption(false);
-    //  Insert trip cost into Trip Amounts sheet
+  //  Insert trip cost into Trip Amounts sheet
   var doc = SpreadsheetApp.getActiveSpreadsheet();
   var tripsSheet = doc.getSheetByName("Trip Amounts");
   tripsSheet.insertRowBefore(2);
-  tripsSheet.getRange(2,1).setValue(newTrip);
-  tripsSheet.getRange(2,2).setValue(costOfNewTrip);
+  tripsSheet.getRange(2, 1).setValue(newTrip);
+  tripsSheet.getRange(2, 2).setValue(costOfNewTrip);
   //  Create new Summary sheet
   var pivotTableSheetCopyFrom = doc.getSheetByName("Houston Summary");
   var pivotTableSheetCopyTo = pivotTableSheetCopyFrom.copyTo(doc);
@@ -413,16 +417,16 @@ function createNewTrip() {
   doc.setActiveSheet(pivotTableSheetCopyTo)
   doc.moveActiveSheet(1);
   //  pick random color
-  var lightColors = ["LightCoral","PaleGreen","Cornsilk","LightPink","LightBlue","Lavender"];
-  var darkColors  = ["Crimson","Green","Goldenrod","MediumVioletRed","RoyalBlue","MediumOrchid"];
+  var lightColors = ["LightCoral", "PaleGreen", "Cornsilk", "LightPink", "LightBlue", "Lavender"];
+  var darkColors = ["Crimson", "Green", "Goldenrod", "MediumVioletRed", "RoyalBlue", "MediumOrchid"];
   var randomColorNumber = Math.floor(Math.random() * lightColors.length);
   var lightColor = lightColors[randomColorNumber];
   var darkColor = darkColors[randomColorNumber];
   //  set tab color
   pivotTableSheetCopyTo.setTabColor(darkColor);
   //  set background cell color
-  pivotTableSheetCopyTo.getRange(1,3).setBackground(darkColor);
-  pivotTableSheetCopyTo.getRange(1,4).setBackground(lightColor);
+  pivotTableSheetCopyTo.getRange(1, 3).setBackground(darkColor);
+  pivotTableSheetCopyTo.getRange(1, 4).setBackground(lightColor);
   //  edit charts
   var charts = pivotTableSheetCopyTo.getCharts();
   //  edit bar chart
@@ -436,13 +440,107 @@ function createNewTrip() {
   var balanceScoreChart = charts[2].modify().setOption('colors', [lightColor]).setOption('title', newTrip + " Total Balance");
   pivotTableSheetCopyTo.updateChart(balanceScoreChart.build());
   */
+ doc.toast("New trip " + newTrip + " created!");
+}
+
+function createNewPerson() {
+  //  Make sure name header is there
+  replaceNameHeader();
+
+  //  Prompt for new name
+  var ui = SpreadsheetApp.getUi();
+  var doc = SpreadsheetApp.getActiveSpreadsheet();
+  var newPerson = ui.prompt("Who do you want to add?");
+  if (newPerson.getSelectedButton() == ui.Button.OK) {
+    var newPersonResponse = newPerson.getResponseText();
+  } else {
+    return;
+  }
+  //  Get full trips from Trip Amounts page
+  var tripsSheet = doc.getSheetByName("Trip Amounts");
+  var tripsHeaders = tripsSheet.getRange(1, 1, 1, tripsSheet.getLastColumn()).getValues()[0];
+  var tripsTripColumn = tripsHeaders.indexOf("Trip") + 1;
+  var tripsAmountColumn = tripsHeaders.indexOf("Amount") + 1;
+  var tripsNotesColumn = tripsHeaders.indexOf("Notes") + 1;
+  var fullTrips = [];
+  if (tripsTripColumn) {
+    var tripData = tripsSheet.getRange(2, tripsTripColumn, tripsSheet.getLastRow(), tripsTripColumn).getValues();
+    for (var ta = 0; ta < tripData.length; ta++) {
+      if (tripData[ta][0] && tripData[ta][0].indexOf("-") == -1) {
+        fullTrips.push(tripData[ta][0]);
+      }
+    }
+  }
+  //  Prompt for trips to associate
+  var tripsArray = [];
+  for (var ft in fullTrips) {
+    var tripsPrompt = ui.alert("Is " + newPersonResponse + " going on the " + fullTrips[ft] + " trip?", ui.ButtonSet.YES_NO);
+    if (tripsPrompt == ui.Button.YES) {
+      tripsArray.push(fullTrips[ft]);
+    }
+  }
+  //  Prompt for emails
+  var emailsToAdd = ui.prompt("Emails to add for new person " + newPersonResponse + " (comma separated if more than one)");
+  if (emailsToAdd.getSelectedButton() == ui.Button.OK) {
+    var emailsToAddResponse = emailsToAdd.getResponseText();
+    if (emailsToAddResponse) {
+      var emailsToAddArray = emailsToAddResponse.split(",").map(a => a.trim());
+      var emailsSheet = doc.getSheetByName("Emails");
+      var emailsHeaders = emailsSheet.getRange(1, 1, 1, emailsSheet.getLastColumn()).getValues()[0];
+      var emailsNameColumn = emailsHeaders.indexOf("Name") + 1;
+      var emailsEmailColumn = emailsHeaders.indexOf("Email") + 1;
+      for (var emails in emailsToAddArray) {
+        emailsToAddArray[emails] = emailsToAddArray[emails].trim();
+        emailsSheet.insertRowBefore(2);
+        emailsSheet.getRange(2, emailsNameColumn).setValue(newPersonResponse);
+        emailsSheet.getRange(2, emailsEmailColumn).setValue(emailsToAddArray[emails]);
+      }
+      let emailsSortOrder = [
+        {column: emailsNameColumn, ascending: true},
+        {column: emailsEmailColumn, ascending: true}
+      ];
+      emailsSheet.getRange(2, 1, emailsSheet.getLastRow(), emailsSheet.getLastColumn()).sort(emailsSortOrder);
+    }
+  }
+  //  Create custom trip amounts if needed
+  for (var t in tripsArray) {
+    var customTripAmount = ui.prompt("Custom amount to pay for " + newPersonResponse + " going on the " + tripsArray[t] + " trip (just close this box if it's the normal amount)");
+    if (customTripAmount.getSelectedButton() == ui.Button.OK) {
+      var customTripAmountResponse = customTripAmount.getResponseText();
+      if (customTripAmountResponse) {
+        //  Insert trip cost into Trip Amounts sheet
+        tripsSheet.insertRowBefore(2);
+        tripsSheet.getRange(2, tripsTripColumn).setValue(tripsArray[t] + " - " + newPersonResponse);
+        tripsSheet.getRange(2, tripsAmountColumn).setValue(customTripAmountResponse);
+      }
+    }
+  }
+  let tripsSortOrder = [
+    {column: tripsTripColumn, ascending: true},
+    {column: tripsAmountColumn, ascending: true},
+    {column: tripsNotesColumn, ascending: true}
+  ];
+  tripsSheet.getRange(2, 1, tripsSheet.getLastRow(), tripsSheet.getLastColumn()).sort(tripsSortOrder);
+  //  Create new person in the form
+  var form = FormApp.openById(FORM_ID);
+  var nameItem = form.getItemById(FORM_ITEM_NAME).asListItem();
+  var currentNameChoices = nameItem.getChoices();
+  var choices = [];
+  choices.push(newPersonResponse);
+  for (var ec in currentNameChoices) {
+    choices.push(currentNameChoices[ec].getValue());
+  }
+  choices.sort();
+  nameItem
+    .setChoiceValues(choices);
+  doc.toast("New person " + newPersonResponse + " created!");
 }
 
 function replaceNameHeader() {
-    //  Replace Name header if missing
-    var doc = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Form Responses");
-    var nameHeader = doc.getRange(1,2).getValue();
-    if (!nameHeader) doc.getRange(1,2).setValue("Name");
+  //  Replace Name header if missing
+  var doc = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Form Responses");
+  var nameHeader = doc.getRange(1, 2).getValue();
+  if (!nameHeader) doc.getRange(1, 2).setValue("Name");
 }
 
 function matches(eVal, argList) {
