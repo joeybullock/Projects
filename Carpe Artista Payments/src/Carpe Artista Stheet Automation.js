@@ -12,6 +12,7 @@ V1: On form submit, calculate balance remaining, trip amount, and receipt number
 V2: Remove 'Trip Amount' calculation by script to allow sheet formula to calculate. Repurpose calculate 'Balance Remaining' to 'Balance Remaining at time of payment' because
     sheet formula now calculates total balance remaining. Add menu scripts for 'Recalc Balance Remaining at time of payment' and 'Send receipt emails for selected rows'.
 V3: Add 'Create new trip' menu script
+V4: Update recalculateBalanceRemaining function to calculate much faster
 ---------------------------*/
 
 /** 
@@ -263,17 +264,44 @@ function recalculateBalanceRemaining() {
   var responseSheet = doc.getSheetByName("Form Responses");
   var responseHeaders = responseSheet.getRange(1, 1, 1, responseSheet.getLastColumn()).getValues()[0];
   var nameColumn = responseHeaders.indexOf("Name") + 1;
+  var amountPaidColumn = responseHeaders.indexOf("Amount Paid") + 1;
   var forTripColumn = responseHeaders.indexOf("For Trip") + 1;
+  var datePaidColumn = responseHeaders.indexOf("Date Paid") + 1;
   var balanceRemainingColumn = responseHeaders.indexOf("Balance Remaining at time of payment") + 1;
   var tripAmountColumn = responseHeaders.indexOf("Trip Amount") + 1;
   var responseData = responseSheet.getRange(2, 1, responseSheet.getLastRow(), responseSheet.getLastColumn()).getValues();
-  var thisPersonsBalance = [];
-  for (var eachRow = 2; eachRow < responseData.length + 1; eachRow++) {
-    thisPersonsBalance = getBalance(responseData[eachRow - 2][nameColumn - 1], responseData[eachRow - 2][forTripColumn - 1], eachRow - 1);
-    if (!isNaN(thisPersonsBalance[1])) {
-      //    sheet formula will calculate trip amounts from now on
-      //    responseSheet.getRange(eachRow, tripAmountColumn).setValue(thisPersonsBalance[0]);
-      responseSheet.getRange(eachRow, balanceRemainingColumn).setValue(thisPersonsBalance[1]);
+
+  var person = [];
+  //  Build object array for each row
+  person = responseData.map(function (n, i) {
+    return {personsName: n[nameColumn-1],
+            datePaid: n[datePaidColumn-1],
+            paid: n[amountPaidColumn-1],
+            trip: n[forTripColumn-1],
+            tripTotal: n[tripAmountColumn-1],
+            balanceRemaining: 0,
+            originalIndex: i
+           }
+  });
+  //  Sort by name, then trip, then date paid
+  person.sort(function (a, b) {
+    return a.personsName.localeCompare(b.personsName) || a.trip.localeCompare(b.trip) || a.datePaid - b.datePaid;
+  });
+  //  Calculate balance remaining for each person/trip
+  for (var pi = 0; pi < person.length; pi++) {
+    var item = person[pi];
+    var previous = person[pi - 1];
+    if (pi === 0 || (item.personsName !== previous.personsName || item.trip !== previous.trip)) {
+      item.balanceRemaining = item.tripTotal - item.paid;
+    } else {
+      item.balanceRemaining = previous.balanceRemaining - item.paid;
+    }
+  }
+  //  Update spreadsheet with balance remaining
+  for (var eachItem = 0; eachItem < person.length + 1; eachItem++) {
+    var currentPerson = person[eachItem];
+    if (currentPerson && currentPerson.personsName && !isNaN(currentPerson.balanceRemaining)) {
+      responseSheet.getRange(currentPerson.originalIndex+2, balanceRemainingColumn).setValue(currentPerson.balanceRemaining);
     }
   }
   doc.toast("Recalculate Balance Remaining at time of payment complete!");

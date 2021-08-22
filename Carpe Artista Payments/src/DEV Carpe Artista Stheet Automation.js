@@ -12,6 +12,7 @@ V1: On form submit, calculate balance remaining, trip amount, and receipt number
 V2: Remove 'Trip Amount' calculation by script to allow sheet formula to calculate. Repurpose calculate 'Balance Remaining' to 'Balance Remaining at time of payment' because
     sheet formula now calculates total balance remaining. Add menu scripts for 'Recalc Balance Remaining at time of payment' and 'Send receipt emails for selected rows'.
 V3: Add 'Create new trip' menu script
+V4: Update recalculateBalanceRemaining function to calculate much faster
 ---------------------------*/
 
 /**
