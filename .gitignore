@@ -4,3 +4,4 @@ PROJ4JS/proj4.code-workspace
 package.json
 *.code-workspace
 Scrape/Scrape.code-workspace
+*.secret
