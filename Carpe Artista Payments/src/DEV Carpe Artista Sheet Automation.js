@@ -1,6 +1,6 @@
-var EMAIL_TEMPLATE_DOC_URL =        "https://docs.google.com/document/d/1Lmja4QAUQPuuAEfUA_mQGDfvsng9VP-wN0bM_4KI11g/edit";
-var EVENT_EMAIL_TEMPLATE_DOC_URL =  "https://docs.google.com/document/d/1RNMKpk60h-XV1XlpvhQkFcO_ml2aa3t5QdeCmDB5otY/edit";
-var FORM_ID =                       "1UnxeOVlMS3Vdk7OlkrdbwQ8B4owoc5DueS8v3wqo0DY";
+var EMAIL_TEMPLATE_DOC_URL =        "";
+var EVENT_EMAIL_TEMPLATE_DOC_URL =  "";
+var FORM_ID =                       "";
 var FORM_ITEM_FOR_TRIP =            "225290537";
 var FORM_ITEM_NAME =                "2032958687";
 var EMAIL_SUBJECT =                 "Carpe Artista Receipt";
