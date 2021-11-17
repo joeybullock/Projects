@@ -13,6 +13,7 @@ V2: Remove 'Trip Amount' calculation by script to allow sheet formula to calcula
     sheet formula now calculates total balance remaining. Add menu scripts for 'Recalc Balance Remaining at time of payment' and 'Send receipt emails for selected rows'.
 V3: Add 'Create new trip' menu script
 V4: Update recalculateBalanceRemaining function to calculate much faster
+V5: transferFunds function started; Show zero balance if negative in email.
 ---------------------------*/
 
 /**
@@ -141,6 +142,9 @@ function createEmailBody(name, eventFundraiser, receipt, paid, trip, balance, no
   topicsHtml = '<ul>' + topicsHtml + '</ul>';
   */
   // Make sure to update the emailTemplateDocId at the top.
+  // If balance is negative, show that the balance in the email is zero.
+  if (balance && Number(balance).toFloat() < 0)
+    balance = "0.00";
   var docId = DocumentApp.openByUrl(EMAIL_TEMPLATE_DOC_URL).getId();
   var emailBody = docToHtml(docId);
   emailBody = emailBody.replace(/{{NAME}}/g, name);
@@ -562,6 +566,32 @@ function createNewPerson() {
   nameItem
     .setChoiceValues(choices);
   doc.toast("New person " + newPersonResponse + " created!");
+}
+
+function transferFunds() {
+  //  Make sure name header is there
+  replaceNameHeader();
+  //  continue
+  var ui = SpreadsheetApp.getUi();
+  var transferFromWho = ui.prompt("Transfer from who?");
+  if (transferFromWho.getSelectedButton() == ui.Button.OK) {
+    transferFromWho = transferFromWho.getResponseText();
+  } else {
+    return;
+  }
+  var transferToWho = ui.prompt("Transfer to who?");
+  if (transferToWho.getSelectedButton() == ui.Button.OK) {
+    transferToWho = transferToWho.getResponseText();
+  } else {
+    return;
+  }
+  var amountToTransfer = ui.prompt("Amount to transfer");
+  if (amountToTransfer.getSelectedButton() == ui.Button.OK) {
+    amountToTransfer = amountToTransfer.getResponseText();
+  } else {
+    return;
+  }
+
 }
 
 function replaceNameHeader() {
