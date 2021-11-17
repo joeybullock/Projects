@@ -143,7 +143,7 @@ function createEmailBody(name, eventFundraiser, receipt, paid, trip, balance, no
   */
   // Make sure to update the emailTemplateDocId at the top.
   // If balance is negative, show that the balance in the email is zero.
-  if (balance && Number(balance).toFloat() < 0)
+  if (balance && Number(balance) < 0)
     balance = "0.00";
   var docId = DocumentApp.openByUrl(EMAIL_TEMPLATE_DOC_URL).getId();
   var emailBody = docToHtml(docId);
