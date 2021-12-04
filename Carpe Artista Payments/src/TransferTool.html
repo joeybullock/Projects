@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+  <!-- Metro 4 -->
+  <link rel="stylesheet" href="https://cdn.metroui.org.ua/v4/css/metro-all.min.css">
+</head>
+
+<body>
+  <h5>Transfer Tool</h5>
+
+  <table id="people1" class="table striped table-border mt-4" data-role="table" data-rows="5" data-rows-steps="5, 10"
+    data-show-activity="false" data-rownum="true" data-check="true" data-check-style="2">
+    <thead>
+      <tr>
+        <th data-sortable="true" data-sort-dir="asc">Name</th>
+      </tr>
+    </thead>
+    <tbody>
+
+    </tbody>
+  </table>
+  <table id="people2" class="table striped table-border mt-4" data-role="table" data-rows="5" data-rows-steps="5, 10"
+    data-show-activity="false" data-rownum="true" data-check="true" data-check-style="2">
+    <thead>
+      <tr>
+        <th data-sortable="true" data-sort-dir="asc">Name</th>
+      </tr>
+    </thead>
+    <tbody>
+
+    </tbody>
+  </table>
+
+  <!-- Metro 4 -->
+  <script src="https://cdn.metroui.org.ua/v4/js/metro.min.js"></script>
+  <script>
+    const TransferTool = {};
+    TransferTool.afterSidebarLoads = function () {
+      //  Checkbox Table
+      TransferTool.people1 = Metro.getPlugin("#people1", "table");
+      TransferTool.people1 = Metro.getPlugin("#people2", "table");
+      google.script.run.withSuccessHandler(people => {
+        TransferTool.people1.setItems(people);
+        // TransferTool.people2.setItems(people);
+        TransferTool.people1.reload();
+        // TransferTool.people2.reload();
+      }).getAllPeopleFromFormResponses();
+      //  Dropdown List
+      //      TransferTool.people2 = Metro.getPlugin("#people2", "dropdown");
+
+
+    }
+    document.addEventListener("DOMContentLoaded", TransferTool.afterSidebarLoads);
+  </script>
+
+</body>
+
+</html>
