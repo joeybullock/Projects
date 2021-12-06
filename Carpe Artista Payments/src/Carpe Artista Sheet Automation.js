@@ -150,7 +150,7 @@ function createEmailBody(name, eventFundraiser, receipt, paid, trip, balance, no
   emailBody = emailBody.replace(/{{NAME}}/g, name);
   emailBody = emailBody.replace(/{{EVENTFUNDRAISER}}/g, eventFundraiser);
   emailBody = emailBody.replace(/{{RECEIPT}}/g, receipt);
-  emailBody = emailBody.replace(/{{AMOUNTPAID}}/g, paid);
+  emailBody = emailBody.replace(/{{AMOUNTPAID}}/g, String(Number(paid).toFixed(2)));
   emailBody = emailBody.replace(/{{DESTINATION}}/g, trip);
   emailBody = emailBody.replace(/{{BALANCE}}/g, String(Number(balance).toFixed(2)));
   if (notes) notes = "Notes: " + notes;
