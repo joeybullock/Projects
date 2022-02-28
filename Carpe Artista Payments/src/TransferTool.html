@@ -1,63 +1,98 @@
-<!DOCTYPE html>
-<html lang="en">
+<html>
+  <head>
+    <title>Using Select2</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.1/css/bootstrap-grid.min.css">
+    <!-- Select2 CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="jumbotron">
+      <div class="container bg-danger">
+        <div>
+          <!-- <label>Transfer From People</label>   -->
+          <select id="people1" style="width:250px;" multiple allow clear>
 
-<head>
-  <!-- Required meta tags -->
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+          </select>
+        </div>
+        <br>
+        <div>
+          <!-- <label>Transfer From Trip/Bucket</label> -->
+          <select id="trip1" style="width:250px;" multiple allow clear>
 
-  <!-- Metro 4 -->
-  <link rel="stylesheet" href="https://cdn.metroui.org.ua/v4/css/metro-all.min.css">
-</head>
+          </select>
+        </div>
+        <br>
+        <hr style="height:2px;border-width:0;color:gray;background-color:rgb(51, 76, 160)">
+        <div>
+          <!-- <label>Transfer To People</label> -->
+          <select id="people2" style="width:250px" multiple allow clear>
+            
+          </select>
+        </div>
+        <br>
+        <div>
+          <!-- <label>Transfer To Trip/Bucket</label> -->
+          <select id="trip2" style="width:250px" multiple allow clear>
 
-<body>
-  <h5>Transfer Tool</h5>
+          </select>
+        </div>
+        <br>
+        <div class="input-group mb-3">
+          <div class="input-group-prepend">
+            <span class="input-group-text">$</span>
+          </div>
+          <input id="amount" type="text" class="form-control" placeholder="Amount to transfer">
+        </div>
+        <br>
+        <hr style="height:2px;border-width:0;color:gray;background-color:rgb(51, 76, 160)">
+        <div>
+          <button id="transfer" type="button" class="btn btn-primary">Transfer</button>
+        </div>
+      </div>
+    </div>
+    <!-- jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <!-- Select2 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
 
-  <table id="people1" class="table striped table-border mt-4" data-role="table" data-rows="5" data-rows-steps="5, 10"
-    data-show-activity="false" data-rownum="true" data-check="true" data-check-style="2">
-    <thead>
-      <tr>
-        <th data-sortable="true" data-sort-dir="asc">Name</th>
-      </tr>
-    </thead>
-    <tbody>
-
-    </tbody>
-  </table>
-  <table id="people2" class="table striped table-border mt-4" data-role="table" data-rows="5" data-rows-steps="5, 10"
-    data-show-activity="false" data-rownum="true" data-check="true" data-check-style="2">
-    <thead>
-      <tr>
-        <th data-sortable="true" data-sort-dir="asc">Name</th>
-      </tr>
-    </thead>
-    <tbody>
-
-    </tbody>
-  </table>
-
-  <!-- Metro 4 -->
-  <script src="https://cdn.metroui.org.ua/v4/js/metro.min.js"></script>
-  <script>
+    <script>
     const TransferTool = {};
     TransferTool.afterSidebarLoads = function () {
-      //  Checkbox Table
-      TransferTool.people1 = Metro.getPlugin("#people1", "table");
-      TransferTool.people1 = Metro.getPlugin("#people2", "table");
       google.script.run.withSuccessHandler(people => {
-        TransferTool.people1.setItems(people);
-        // TransferTool.people2.setItems(people);
-        TransferTool.people1.reload();
-        // TransferTool.people2.reload();
-      }).getAllPeopleFromFormResponses();
-      //  Dropdown List
-      //      TransferTool.people2 = Metro.getPlugin("#people2", "dropdown");
-
-
+        $("#people1").select2({
+          placeholder: "From People",
+          allowClear: true,
+          data: people
+        });
+        $("#people2").select2({
+          placeholder: "To People",
+          allowClear: true,
+          data: people
+        });
+      }).getAllPeopleFromFormQuestionaire();
+      google.script.run.withSuccessHandler(trips => {
+        $("#trip1").select2({
+          placeholder: "From Trip",
+          allowClear: true,
+          data: trips
+        });
+        $("#trip2").select2({
+          placeholder: "To Trip",
+          allowClear: true,
+          data: trips
+        });
+      }).getAllTripsFromFormQuestionaire();
     }
-    document.addEventListener("DOMContentLoaded", TransferTool.afterSidebarLoads);
+    document.addEventListener('DOMContentLoaded', TransferTool.afterSidebarLoads);
+    document.getElementById('transfer').addEventListener('click', function() {
+      var people1 = $('#people1').val();
+      var people2 = $('#people2').val();
+      var trip1 = $('#trip1').val();
+      var trip2 = $('#trip2').val();
+      var amount = document.getElementById('amount').value;
+      google.script.run.transferFunds(people1, people2, trip1, trip2, amount);
+    });
   </script>
-
-</body>
-
+  </body>
 </html>

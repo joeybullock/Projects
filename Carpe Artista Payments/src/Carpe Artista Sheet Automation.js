@@ -1,9 +1,9 @@
-var EMAIL_TEMPLATE_DOC_URL =        "";
-var EVENT_EMAIL_TEMPLATE_DOC_URL =  "";
-var FORM_ID =                       "";
-var FORM_ITEM_FOR_TRIP =            "225290537";
-var FORM_ITEM_NAME =                "2032958687";
-var EMAIL_SUBJECT =                 "Carpe Artista Receipt";
+var EMAIL_TEMPLATE_DOC_URL = "";
+var EVENT_EMAIL_TEMPLATE_DOC_URL = "";
+var FORM_ID = "";
+var FORM_ITEM_FOR_TRIP = "225290537";
+var FORM_ITEM_NAME = "2032958687";
+var EMAIL_SUBJECT = "Carpe Artista Receipt";
 var SCRIPT_PROP = PropertiesService.getScriptProperties(); // new property service
 
 /*---------------------------
@@ -18,16 +18,16 @@ V5: transferFunds function started; Show zero balance if negative in email.
 
 /**
  * Form ID's:
-Name: 2032958687
-Amount Paid: 602672250
-For Trip: 225290537
-: 449691158
-Send Email Receipt: 1254954954
-Payment or Event: 407454692
-Date Paid: 57021869
-Notes (Check Number, Payment Method, etc): 241945240
-Event/Fundraiser Info: 144043923
-Event/Fundraiser: 411551078
+Name: 2032958687 : item type: LIST
+Amount Paid: 602672250 : item type: TEXT
+For Trip: 225290537 : item type: MULTIPLE_CHOICE
+: 449691158 : item type: PAGE_BREAK
+Send Email Receipt: 1254954954 : item type: MULTIPLE_CHOICE
+Payment or Event: 407454692 : item type: MULTIPLE_CHOICE
+Date Paid: 57021869 : item type: DATE
+Notes (Check Number, Payment Method, etc): 241945240 : item type: PARAGRAPH_TEXT
+Event/Fundraiser Info: 144043923 : item type: PAGE_BREAK
+Event/Fundraiser: 411551078 : item type: MULTIPLE_CHOICE
  */
 
 /**
@@ -45,11 +45,12 @@ function onOpen() {
   //  Create 'Scripts' menu
   var ui = SpreadsheetApp.getUi();
   ui.createMenu('Scripts')
-  .addItem('Create new person', 'createNewPerson')
-  .addItem('Create new trip', 'createNewTrip')
-  .addItem('Send receipt emails for selected rows', 'sendEmailAgain')
-  .addItem('Recalc Balance Remaining at time of payment', 'recalculateBalanceRemaining')
-  .addToUi();
+    .addItem('Create new person', 'createNewPerson')
+    .addItem('Create new trip', 'createNewTrip')
+    .addItem('Send receipt emails for selected rows', 'sendEmailAgain')
+    .addItem('Recalc Balance Remaining at time of payment', 'recalculateBalanceRemaining')
+    .addItem('Transfer Tool', 'transferTool')
+    .addToUi();
 }
 
 /**
@@ -277,14 +278,15 @@ function recalculateBalanceRemaining() {
   var person = [];
   //  Build object array for each row
   person = responseData.map(function (n, i) {
-    return {personsName: n[nameColumn-1],
-            datePaid: n[datePaidColumn-1],
-            paid: n[amountPaidColumn-1],
-            trip: n[forTripColumn-1],
-            tripTotal: n[tripAmountColumn-1],
-            balanceRemaining: 0,
-            originalIndex: i
-           }
+    return {
+      personsName: n[nameColumn - 1],
+      datePaid: n[datePaidColumn - 1],
+      paid: n[amountPaidColumn - 1],
+      trip: n[forTripColumn - 1],
+      tripTotal: n[tripAmountColumn - 1],
+      balanceRemaining: 0,
+      originalIndex: i
+    }
   });
   //  Sort by name, then trip, then date paid
   person.sort(function (a, b) {
@@ -294,6 +296,8 @@ function recalculateBalanceRemaining() {
   for (var pi = 0; pi < person.length; pi++) {
     var item = person[pi];
     var previous = person[pi - 1];
+    item.tripTotal = isNaN(item.tripTotal) ? 0 : item.tripTotal;
+    item.balanceRemaining = isNaN(item.balanceRemaining) ? 0 : item.balanceRemaining;
     if (pi === 0 || (item.personsName !== previous.personsName || item.trip !== previous.trip)) {
       item.balanceRemaining = item.tripTotal - item.paid;
     } else {
@@ -304,7 +308,7 @@ function recalculateBalanceRemaining() {
   for (var eachItem = 0; eachItem < person.length + 1; eachItem++) {
     var currentPerson = person[eachItem];
     if (currentPerson && currentPerson.personsName && !isNaN(currentPerson.balanceRemaining)) {
-      responseSheet.getRange(currentPerson.originalIndex+2, balanceRemainingColumn).setValue(currentPerson.balanceRemaining);
+      responseSheet.getRange(currentPerson.originalIndex + 2, balanceRemainingColumn).setValue(currentPerson.balanceRemaining);
     }
   }
   doc.toast("Recalculate Balance Remaining at time of payment complete!");
@@ -472,7 +476,7 @@ function createNewTrip() {
   var balanceScoreChart = charts[2].modify().setOption('colors', [lightColor]).setOption('title', newTrip + " Total Balance");
   pivotTableSheetCopyTo.updateChart(balanceScoreChart.build());
   */
- doc.toast("New trip " + newTrip + " created!");
+  doc.toast("New trip " + newTrip + " created!");
 }
 
 function createNewPerson() {
@@ -488,27 +492,29 @@ function createNewPerson() {
   } else {
     return;
   }
-  //  Get full trips from Trip Amounts page
+  //  Get full trips from Trips on the Form
   var tripsSheet = doc.getSheetByName("Trip Amounts");
   var tripsHeaders = tripsSheet.getRange(1, 1, 1, tripsSheet.getLastColumn()).getValues()[0];
   var tripsTripColumn = tripsHeaders.indexOf("Trip") + 1;
   var tripsAmountColumn = tripsHeaders.indexOf("Amount") + 1;
   var tripsNotesColumn = tripsHeaders.indexOf("Notes") + 1;
-  var fullTrips = [];
-  if (tripsTripColumn) {
-    var tripData = tripsSheet.getRange(2, tripsTripColumn, tripsSheet.getLastRow(), tripsTripColumn).getValues();
-    for (var ta = 0; ta < tripData.length; ta++) {
-      if (tripData[ta][0] && tripData[ta][0].indexOf("-") == -1) {
-        fullTrips.push(tripData[ta][0]);
-      }
-    }
-  }
+  var fullTrips = getAllTripsFromFormQuestionaire();
+  // if (tripsTripColumn) {
+  //   var tripData = tripsSheet.getRange(2, tripsTripColumn, tripsSheet.getLastRow(), tripsTripColumn).getValues();
+  //   for (var ta = 0; ta < tripData.length; ta++) {
+  //     if (tripData[ta][0] && tripData[ta][0].indexOf("-") == -1) {
+  //       fullTrips.push(tripData[ta][0]);
+  //     }
+  //   }
+  // }
   //  Prompt for trips to associate
   var tripsArray = [];
   for (var ft in fullTrips) {
-    var tripsPrompt = ui.alert("Is " + newPersonResponse + " going on the " + fullTrips[ft] + " trip?", ui.ButtonSet.YES_NO);
-    if (tripsPrompt == ui.Button.YES) {
-      tripsArray.push(fullTrips[ft]);
+    if (fullTrips[ft].text != "Bucket") {
+      var tripsPrompt = ui.alert("Is " + newPersonResponse + " going on the " + fullTrips[ft].text + " trip?", ui.ButtonSet.YES_NO);
+      if (tripsPrompt == ui.Button.YES) {
+        tripsArray.push(fullTrips[ft].text);
+      }
     }
   }
   //  Prompt for emails
@@ -527,9 +533,14 @@ function createNewPerson() {
         emailsSheet.getRange(2, emailsNameColumn).setValue(newPersonResponse);
         emailsSheet.getRange(2, emailsEmailColumn).setValue(emailsToAddArray[emails]);
       }
-      let emailsSortOrder = [
-        {column: emailsNameColumn, ascending: true},
-        {column: emailsEmailColumn, ascending: true}
+      let emailsSortOrder = [{
+          column: emailsNameColumn,
+          ascending: true
+        },
+        {
+          column: emailsEmailColumn,
+          ascending: true
+        }
       ];
       emailsSheet.getRange(2, 1, emailsSheet.getLastRow(), emailsSheet.getLastColumn()).sort(emailsSortOrder);
     }
@@ -547,10 +558,18 @@ function createNewPerson() {
       }
     }
   }
-  let tripsSortOrder = [
-    {column: tripsTripColumn, ascending: true},
-    {column: tripsAmountColumn, ascending: true},
-    {column: tripsNotesColumn, ascending: true}
+  let tripsSortOrder = [{
+      column: tripsTripColumn,
+      ascending: true
+    },
+    {
+      column: tripsAmountColumn,
+      ascending: true
+    },
+    {
+      column: tripsNotesColumn,
+      ascending: true
+    }
   ];
   tripsSheet.getRange(2, 1, tripsSheet.getLastRow(), tripsSheet.getLastColumn()).sort(tripsSortOrder);
   //  Create new person in the form
@@ -568,30 +587,153 @@ function createNewPerson() {
   doc.toast("New person " + newPersonResponse + " created!");
 }
 
-function transferFunds() {
+function transferTool() {
   //  Make sure name header is there
   replaceNameHeader();
   //  continue
+  var html = HtmlService.createHtmlOutputFromFile('TransferTool')
+    .setTitle('Transfer Tool');
+  SpreadsheetApp.getUi() // Or DocumentApp or SlidesApp or FormApp.
+    .showSidebar(html);
   var ui = SpreadsheetApp.getUi();
-  var transferFromWho = ui.prompt("Transfer from who?");
-  if (transferFromWho.getSelectedButton() == ui.Button.OK) {
-    transferFromWho = transferFromWho.getResponseText();
-  } else {
-    return;
-  }
-  var transferToWho = ui.prompt("Transfer to who?");
-  if (transferToWho.getSelectedButton() == ui.Button.OK) {
-    transferToWho = transferToWho.getResponseText();
-  } else {
-    return;
-  }
-  var amountToTransfer = ui.prompt("Amount to transfer");
-  if (amountToTransfer.getSelectedButton() == ui.Button.OK) {
-    amountToTransfer = amountToTransfer.getResponseText();
-  } else {
-    return;
-  }
+}
 
+function getAllTripsFromFormQuestionaire() {
+  var form = FormApp.openById(FORM_ID);
+  var tripItem = form.getItemById(FORM_ITEM_FOR_TRIP).asMultipleChoiceItem();
+  var currentTripChoices = tripItem.getChoices();
+  var trips = [];
+  //  Build object array for each row
+  trips = currentTripChoices.map(function (n, i) {
+    return {
+      id: i,
+      text: n.getValue()
+    }
+  });
+  return trips;
+}
+
+function getAllPeopleFromFormQuestionaire() {
+  var form = FormApp.openById(FORM_ID);
+  var nameItem = form.getItemById(FORM_ITEM_NAME).asListItem();
+  var currentNameChoices = nameItem.getChoices();
+  var person = [];
+  //  Build object array for each row
+  person = currentNameChoices.map(function (n, i) {
+    return {
+      id: i,
+      text: n.getValue()
+    }
+  });
+  return person;
+}
+
+function getAllPeopleFromFormResponses() {
+  var doc = SpreadsheetApp.getActiveSpreadsheet();
+  var responseSheet = doc.getSheetByName("Form Responses");
+  var responseHeaders = responseSheet.getRange(1, 1, 1, responseSheet.getLastColumn()).getValues()[0];
+  var nameColumn = responseHeaders.indexOf("Name") + 1;
+  var allPeople = responseSheet.getRange(2, nameColumn, responseSheet.getLastRow(), nameColumn).getValues();
+  var allPeopleRes = [];
+  for (var ap = 0; ap < allPeople.length; ap++) {
+    if (allPeople[ap][0]) {
+      //      Logger.log("allPeople[ap][0]: " + allPeople[ap][0])
+      allPeopleRes.push(allPeople[ap][0]);
+    }
+  }
+  var allPeopleFiltered = new Set(allPeopleRes);
+  var allPeopleFilteredSorted = [...allPeopleFiltered].sort();
+  //  allPeopleFilteredSorted.forEach((it,ind,ar) => ar[ind] = [it]);
+  return allPeopleFilteredSorted;
+}
+
+function transferFunds(people1, people2, trip1, trip2, amount) {
+  //  Figure out how much will be taken from each person for each trip
+  var moneyDividedFrom = people1.length * trip1.length;
+  var amountDividedFrom = 0;
+  if (moneyDividedFrom) {
+    amountDividedFrom = amount / moneyDividedFrom;
+  }
+  //  Figure out how much will be given to each person for each trip
+  var moneyDividedTo = people2.length * trip2.length;
+  var amountDividedTo = 0;
+  if (moneyDividedTo) {
+    amountDividedTo = amount / moneyDividedTo;
+  }
+  //  Figure out the people taken from and given to
+  var selectedPeople1 = [];
+  var selectedPeople2 = [];
+  var allPeople = getAllPeopleFromFormQuestionaire();
+  for (var ap in allPeople) {
+    if (void(0) !== allPeople[ap].id) {
+      if (exists(allPeople[ap].id, people1)) {
+        selectedPeople1.push(allPeople[ap].text);
+      }
+      if (exists(allPeople[ap].id, people2)) {
+        selectedPeople2.push(allPeople[ap].text);
+      }
+    }
+  }
+  //  Figure out the trips taken from and given to
+  var selectedTrip1 = [];
+  var selectedTrip2 = [];
+  var allTrips = getAllTripsFromFormQuestionaire();
+  for (var at in allTrips) {
+    if (void(0) !== allTrips[at].id) {
+      if (exists(allTrips[at].id, trip1)) {
+        selectedTrip1.push(allTrips[at].text);
+      }
+      if (exists(allTrips[at].id, trip2)) {
+        selectedTrip2.push(allTrips[at].text);
+      }
+    }
+  }
+  //  Add entries
+  var doc = SpreadsheetApp.getActiveSpreadsheet();
+  var responseSheet = doc.getSheetByName("Form Responses");
+  var responseHeaders = responseSheet.getRange(1, 1, 1, responseSheet.getLastColumn()).getValues()[0];
+  var nameColumn = responseHeaders.indexOf("Name") + 1;
+  var amountPaidColumn = responseHeaders.indexOf("Amount Paid") + 1;
+  var forTripColumn = responseHeaders.indexOf("For Trip") + 1;
+  var datePaidColumn = responseHeaders.indexOf("Date Paid") + 1;
+  var paymentOrEventColumn = responseHeaders.indexOf("Payment or Event") + 1;
+  //  Entries for money taken from people and trips
+  selectedPeople1.forEach(p1 => {
+    selectedTrip1.forEach(t1 => {
+      var lastRow = responseSheet.getLastRow();
+      //  Get the last row with any data in it
+      while (!responseSheet.getRange(lastRow, nameColumn).getValue() && !responseSheet.getRange(lastRow, amountPaidColumn).getValue()) {
+        lastRow = lastRow - 1;
+      }
+      responseSheet.insertRowAfter(lastRow);
+      responseSheet.getRange(lastRow + 1, nameColumn).setValue(p1);
+      responseSheet.getRange(lastRow + 1, amountPaidColumn).setValue(-1 * amountDividedFrom);
+      responseSheet.getRange(lastRow + 1, forTripColumn).setValue(t1);
+      var today = new Date();
+      responseSheet.getRange(lastRow + 1, datePaidColumn).setValue("" + (today.getMonth() + 1) + "/" + today.getDate() + "/" + today.getFullYear());
+      responseSheet.getRange(lastRow + 1, paymentOrEventColumn).setValue("Transfer");
+    });
+  });
+  //  Entries for money given to people and trips
+  selectedPeople2.forEach(p2 => {
+    selectedTrip2.forEach(t2 => {
+      var lastRow = responseSheet.getLastRow();
+      //  Get the last row with any data in it
+      while (!responseSheet.getRange(lastRow, nameColumn).getValue() && !responseSheet.getRange(lastRow, amountPaidColumn).getValue()) {
+        lastRow = lastRow - 1;
+      }
+      responseSheet.insertRowAfter(lastRow);
+      responseSheet.getRange(lastRow + 1, nameColumn).setValue(p2);
+      responseSheet.getRange(lastRow + 1, amountPaidColumn).setValue(amountDividedTo);
+      responseSheet.getRange(lastRow + 1, forTripColumn).setValue(t2);
+      var today = new Date();
+      responseSheet.getRange(lastRow + 1, datePaidColumn).setValue("" + (today.getMonth() + 1) + "/" + today.getDate() + "/" + today.getFullYear());
+      responseSheet.getRange(lastRow + 1, paymentOrEventColumn).setValue("Transfer");
+    });
+  });
+  //  Recalculate balance remaining
+  recalculateBalanceRemaining();
+  doc.toast("Transfer complete!");
 }
 
 function replaceNameHeader() {
@@ -610,6 +752,25 @@ function matches(eVal, argList) {
   return false;
 }
 
+function exists(eVal, eArray) {
+  for (var ii in eArray)
+    if (eArray[ii] == eVal) return true;
+  return false;
+}
+
 function distinctArray(array) {
   return [...new Set(array)];
+}
+
+function exploreObject(objExplore) {
+  Logger.log("Methods:");
+  for (var x in objExplore) {
+    if (typeof (objExplore[x]) == "function") Logger.log("   " + x);
+  }
+
+  Logger.log("");
+  Logger.log("Properties:");
+  for (var y in objExplore) {
+    if (typeof (objExplore[y]) != "function") Logger.log("   " + y + " = " + objExplore[y]);
+  }
 }
