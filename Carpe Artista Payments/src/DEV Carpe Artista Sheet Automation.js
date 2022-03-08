@@ -647,7 +647,7 @@ function getAllPeopleFromFormResponses() {
   return allPeopleFilteredSorted;
 }
 
-function transferFunds(people1, people2, trip1, trip2, amount) {
+function transferFunds(people1, people2, trip1, trip2, amount, notes) {
   //  Figure out how much will be taken from each person for each trip
   var moneyDividedFrom = people1.length * trip1.length;
   var amountDividedFrom = 0;
@@ -697,6 +697,7 @@ function transferFunds(people1, people2, trip1, trip2, amount) {
   var forTripColumn = responseHeaders.indexOf("For Trip") + 1;
   var datePaidColumn = responseHeaders.indexOf("Date Paid") + 1;
   var paymentOrEventColumn = responseHeaders.indexOf("Payment or Event") + 1;
+  var notesColumn = responseHeaders.indexOf("Notes (Check Number, Payment Method, etc)") + 1;
   //  Entries for money taken from people and trips
   selectedPeople1.forEach(p1 => {
     selectedTrip1.forEach(t1 => {
@@ -712,6 +713,7 @@ function transferFunds(people1, people2, trip1, trip2, amount) {
       var today = new Date();
       responseSheet.getRange(lastRow + 1, datePaidColumn).setValue("" + (today.getMonth() + 1) + "/" + today.getDate() + "/" + today.getFullYear());
       responseSheet.getRange(lastRow + 1, paymentOrEventColumn).setValue("Transfer");
+      responseSheet.getRange(lastRow + 1, notesColumn).setValue(notes);
     });
   });
   //  Entries for money given to people and trips
@@ -729,6 +731,7 @@ function transferFunds(people1, people2, trip1, trip2, amount) {
       var today = new Date();
       responseSheet.getRange(lastRow + 1, datePaidColumn).setValue("" + (today.getMonth() + 1) + "/" + today.getDate() + "/" + today.getFullYear());
       responseSheet.getRange(lastRow + 1, paymentOrEventColumn).setValue("Transfer");
+      responseSheet.getRange(lastRow + 1, notesColumn).setValue(notes);
     });
   });
   //  Recalculate balance remaining
