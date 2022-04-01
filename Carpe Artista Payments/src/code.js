@@ -79,3 +79,9 @@ function getHistogramData() {
     return []
   }
 }
+//  Get form id's
+var form = FormApp.getActiveForm();
+var items = form.getItems();
+for (var i in items) { 
+  Logger.log(items[i].getTitle() + ': ' + items[i].getId());
+}
