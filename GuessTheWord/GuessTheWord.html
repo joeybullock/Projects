@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guess The Word</title>
+</head>
+
+<body>
+  <h3>Guess the word</h3>
+  <h1 id="word"></h1>
+  <form onSubmit="return false;">
+    <label for="guess">Your Guess:</label><br>
+    <input type="text" id="guess" name="guess" autofocus><br><br>
+    <button type="button" id="clicky">Guess</button>
+  </form>
+  <h1 id="response"></h1>
+  <div id="reload"></div>
+</body>
+<script>
+  var input = document.getElementById("guess");
+  input.addEventListener("keyup", function (event) {
+    if (event.keyCode === 13) {
+      event.preventDefault();
+      document.getElementById("clicky").click();
+    }
+  });
+</script>
+<script>
+  var words = ["alexander","josefina","juliana","joseph","alexis"];
+  var word = words[Math.floor(Math.random() * words.length)];
+  var wordSplit = word.split("");
+  for (var i = 0; i < 100; i++) {
+    var rand = Math.floor(Math.random() * word.length);
+    var shifted = wordSplit.shift();
+    wordSpliced = wordSplit.splice(rand, 0, shifted);
+  }
+  var word2 = wordSplit.join("");
+  document.getElementById("word").innerHTML = word2;
+  document.getElementById("clicky").addEventListener("click", function () {
+    var guess = document.getElementById("guess").value;
+    if (guess.toLowerCase() !== word.toLowerCase()) {
+      document.getElementById("response").innerHTML = guess + "? nope, try again";
+      document.getElementById("guess").value = "";
+    } else {
+      document.getElementById("response").innerHTML = "Congrats! The word was <i>" + word + "</i>";
+      const reloadButton = document.createElement("button");
+      reloadButton.onclick = reloadPage;
+      reloadButton.innerHTML = "Play again";
+      document.getElementById("reload").appendChild(reloadButton);
+    }
+  });
+  function reloadPage() {
+    window.location.reload();
+  }
+</script>
+</html>
