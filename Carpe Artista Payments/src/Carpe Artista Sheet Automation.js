@@ -434,7 +434,7 @@ function createNewTrip() {
   tripsSheet.getRange(2, 1).setValue(newTrip);
   tripsSheet.getRange(2, 2).setValue(costOfNewTrip);
   //  Create new Summary sheet
-  var pivotTableSheetCopyFrom = doc.getSheetByName("Houston Summary");
+  var pivotTableSheetCopyFrom = doc.getSheetByName("Bucket Summary");
   var pivotTableSheetCopyTo = pivotTableSheetCopyFrom.copyTo(doc);
   pivotTableSheetCopyTo.setName(newTrip + " Summary");
   //  Get pivot table

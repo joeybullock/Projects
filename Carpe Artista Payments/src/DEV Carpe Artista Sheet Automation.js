@@ -510,7 +510,7 @@ function createNewPerson() {
   //  Prompt for trips to associate
   var tripsArray = [];
   for (var ft in fullTrips) {
-    if (fullTrips[ft].text != "Bucket") {
+    if (fullTrips[ft].text != "Bucket Summary") {
       var tripsPrompt = ui.alert("Is " + newPersonResponse + " going on the " + fullTrips[ft].text + " trip?", ui.ButtonSet.YES_NO);
       if (tripsPrompt == ui.Button.YES) {
         tripsArray.push(fullTrips[ft].text);
